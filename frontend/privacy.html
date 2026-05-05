@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MERIDIAN — Privacy Mode</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --bg-primary:   #040812;
+      --bg-secondary: #080f1e;
+      --bg-card:      #0d1628;
+      --bg-card2:     #0a1220;
+      --cyan:         #00d4ff;
+      --cyan-dim:     #00d4ff22;
+      --cyan-mid:     #00d4ff44;
+      --green:        #00ff88;
+      --green-dim:    #00ff8822;
+      --yellow:       #ffd700;
+      --yellow-dim:   #ffd70022;
+      --red:          #ff4757;
+      --red-dim:      #ff475722;
+      --purple:       #a78bfa;
+      --purple-dim:   #a78bfa22;
+      --text-primary: #e8f4fd;
+      --text-muted:   #6b8aad;
+      --border:       #1a2d4a;
+      --sidebar-w:    240px;
+
+      /* Ghost layer colours */
+      --ghost:        #7c3aed;
+      --ghost-dim:    #7c3aed22;
+      --ghost-mid:    #7c3aed55;
+    }
+
+    html, body { height:100%; background:var(--bg-primary); color:var(--text-primary); font-family:'Inter',sans-serif; overflow-x:hidden; }
+
+    /* ── GRID BG ── */
+    .grid-bg {
+      position:fixed; inset:0; z-index:0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+      background-size:50px 50px; pointer-events:none;
+      transition: background-image 1s ease;
+    }
+    .grid-bg.ghost-active {
+      background-image:
+        linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+    }
+
+    /* ── GHOST VIGNETTE OVERLAY ── */
+    .ghost-vignette {
+      position:fixed; inset:0; z-index:2; pointer-events:none;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(124,58,237,0.12) 100%);
+      opacity:0; transition:opacity 1s ease;
+    }
+    .ghost-vignette.active { opacity:1; }
+
+    /* ── SCAN LINE ── */
+    .scanline { position:fixed; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); opacity:0.3; animation:scanDown 6s linear infinite; pointer-events:none; z-index:5; transition:background 1s; }
+    .scanline.ghost-active { background:linear-gradient(90deg,transparent,var(--ghost),transparent); }
+    @keyframes scanDown { 0%{top:0;opacity:.4} 100%{top:100vh;opacity:0} }
+
+    /* ── SIDEBAR ── */
+    .sidebar { position:fixed; left:0; top:0; bottom:0; width:var(--sidebar-w); background:rgba(8,15,30,0.95); border-right:1px solid var(--border); backdrop-filter:blur(16px); z-index:100; display:flex; flex-direction:column; transition:border-color 1s; }
+    .sidebar.ghost-active { border-right-color:var(--ghost-mid); }
+    .sidebar-logo { padding:24px 20px 20px; border-bottom:1px solid var(--border); }
+    .sidebar-logo .logo-text { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900; letter-spacing:4px; background:linear-gradient(135deg,#fff,var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; transition:all 1s; }
+    .sidebar-logo .logo-text.ghost-active { background:linear-gradient(135deg,#fff,var(--ghost)); -webkit-background-clip:text; background-clip:text; }
+    .sidebar-logo .logo-sub { font-size:10px; color:var(--text-muted); letter-spacing:2px; margin-top:2px; }
+    .user-badge { display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); }
+    .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--cyan),#7c3aed); display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:#040812; flex-shrink:0; transition:background 1s; }
+    .avatar.ghost-active { background:linear-gradient(135deg,var(--ghost),#4c1d95); }
+    .user-info .name { font-size:13px; font-weight:600; }
+    .user-info .role { font-size:10px; color:var(--cyan); letter-spacing:1px; transition:color 1s; }
+    .user-info .role.ghost-active { color:var(--ghost); }
+    .nav { flex:1; padding:16px 0; overflow-y:auto; }
+    .nav-section { padding:8px 20px 4px; font-size:9px; letter-spacing:3px; color:#2a3d55; text-transform:uppercase; }
+    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 20px; cursor:pointer; color:var(--text-muted); font-size:13px; transition:all 0.2s; text-decoration:none; position:relative; }
+    .nav-item:hover { color:var(--text-primary); background:rgba(0,212,255,0.04); }
+    .nav-item.active { color:var(--ghost); background:var(--ghost-dim); }
+    .nav-item.active::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ghost); border-radius:0 2px 2px 0; }
+    .nav-icon { font-size:16px; width:20px; text-align:center; }
+    .nav-badge { margin-left:auto; padding:2px 7px; background:var(--red); border-radius:10px; font-size:10px; color:#fff; font-weight:600; }
+    .sidebar-bottom { padding:16px 20px; border-top:1px solid var(--border); }
+
+    /* ── TOPBAR ── */
+    .topbar { position:fixed; top:0; left:var(--sidebar-w); right:0; height:60px; z-index:90; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:rgba(4,8,18,0.9); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); transition:border-color 1s; }
+    .topbar.ghost-active { border-bottom-color:var(--ghost-mid); }
+    .topbar-left .topbar-title { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:600; letter-spacing:3px; }
+    .topbar-left .topbar-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .topbar-right { display:flex; align-items:center; gap:20px; }
+    .topbar-clock { font-family:'Orbitron',sans-serif; font-size:13px; color:var(--cyan); letter-spacing:2px; transition:color 1s; }
+    .topbar-clock.ghost-active { color:var(--ghost); }
+    .sys-dot { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); }
+    .pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; transition:all 1s; }
+    .pulse-dot.ghost-active { background:var(--ghost); box-shadow:0 0 8px var(--ghost); }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+
+    /* ── MAIN ── */
+    .main { margin-left:var(--sidebar-w); padding-top:60px; min-height:100vh; position:relative; z-index:10; }
+    .content { padding:24px 28px; }
+
+    /* ── CARD BASE ── */
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px; position:relative; overflow:hidden; transition:border-color 0.3s, box-shadow 0.3s; animation:fadeIn 0.4s ease both; }
+    .card:hover { border-color:#253d5a; }
+    .card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan-dim),transparent); transition:background 1s; }
+    .card.ghost-tint { border-color:var(--ghost-mid); box-shadow:0 0 24px rgba(124,58,237,0.08); }
+    .card.ghost-tint::before { background:linear-gradient(90deg,transparent,var(--ghost-mid),transparent); }
+    .card-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .card-label-dot { width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 6px var(--cyan); flex-shrink:0; transition:all 1s; }
+    .card-label-dot.ghost { background:var(--ghost); box-shadow:0 0 6px var(--ghost); }
+
+    /* ── GRIDS ── */
+    .grid-2   { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+    .grid-3   { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+    .grid-4   { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+    .grid-3-1 { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:20px; }
+    .mb-20    { margin-bottom:20px; }
+
+    /* ── MASTER TOGGLE HERO ── */
+    .hero-card {
+      border-radius:16px; padding:36px 40px;
+      position:relative; overflow:hidden;
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      transition:all 1s ease;
+      animation:fadeIn 0.4s ease both;
+    }
+    .hero-card.ghost-active {
+      background:linear-gradient(135deg,#0d1020 0%,#12082a 100%);
+      border-color:var(--ghost);
+      box-shadow:0 0 60px rgba(124,58,237,0.15), inset 0 0 80px rgba(124,58,237,0.04);
+    }
+    .hero-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); transition:background 1s; }
+    .hero-card.ghost-active::before { background:linear-gradient(90deg,transparent,var(--ghost),transparent); opacity:0.6; }
+
+    /* Particle glow behind toggle */
+    .hero-glow {
+      position:absolute; top:50%; right:160px; transform:translateY(-50%);
+      width:300px; height:300px; border-radius:50%;
+      background:radial-gradient(circle, rgba(124,58,237,0) 0%, transparent 70%);
+      pointer-events:none; transition:background 1s;
+    }
+    .hero-card.ghost-active .hero-glow {
+      background:radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);
+    }
+
+    .hero-body { display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1; }
+    .hero-left { flex:1; }
+    .hero-badge {
+      display:inline-flex; align-items:center; gap:7px;
+      padding:5px 14px; border-radius:20px; font-size:10px; letter-spacing:2px;
+      text-transform:uppercase; margin-bottom:16px; border:1px solid;
+      background:var(--ghost-dim); color:var(--ghost); border-color:var(--ghost);
+      transition:all 1s;
+    }
+    .hero-badge.off { background:rgba(255,255,255,0.03); color:var(--text-muted); border-color:var(--border); }
+    .hero-badge-dot { width:6px; height:6px; border-radius:50%; background:var(--ghost); box-shadow:0 0 6px var(--ghost); animation:pulse 2s infinite; }
+
+    .hero-title { font-family:'Orbitron',sans-serif; font-size:28px; font-weight:900; letter-spacing:3px; margin-bottom:10px; transition:all 1s; }
+    .hero-title .ht-normal { color:var(--text-primary); }
+    .hero-title .ht-ghost  { color:var(--ghost); text-shadow:0 0 30px rgba(124,58,237,0.5); }
+    .hero-desc { font-size:13px; color:var(--text-muted); line-height:1.7; max-width:520px; }
+    .hero-desc strong { color:var(--text-primary); }
+
+    .hero-right { display:flex; flex-direction:column; align-items:center; gap:16px; }
+
+    /* Big toggle switch */
+    .big-toggle {
+      width:100px; height:54px; border-radius:27px;
+      background:#1a2d4a; border:2px solid var(--border);
+      position:relative; cursor:pointer; transition:all 0.5s ease;
+      flex-shrink:0;
+    }
+    .big-toggle:hover { border-color:var(--ghost); }
+    .big-toggle.on {
+      background:linear-gradient(135deg, #2d1b5e, #1a0d40);
+      border-color:var(--ghost);
+      box-shadow:0 0 30px rgba(124,58,237,0.4), inset 0 0 20px rgba(124,58,237,0.1);
+    }
+    .big-toggle-pip {
+      position:absolute; top:5px; left:5px;
+      width:40px; height:40px; border-radius:50%;
+      background:var(--text-muted);
+      transition:all 0.5s cubic-bezier(0.4,0,0.2,1);
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    }
+    .big-toggle.on .big-toggle-pip {
+      left:51px;
+      background:var(--ghost);
+      box-shadow:0 0 20px rgba(124,58,237,0.6);
+    }
+
+    .toggle-label {
+      font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:2px;
+      color:var(--text-muted); transition:color 0.5s;
+    }
+    .toggle-label.on { color:var(--ghost); }
+
+    /* ── STATUS INDICATORS ── */
+    .status-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:24px; }
+    .status-item {
+      padding:14px; border-radius:10px; border:1px solid var(--border);
+      background:rgba(255,255,255,0.01); text-align:center; transition:all 1s;
+    }
+    .status-item.active { border-color:var(--ghost-mid); background:var(--ghost-dim); }
+    .status-icon { font-size:20px; margin-bottom:6px; }
+    .status-label { font-size:10px; letter-spacing:1px; color:var(--text-muted); margin-bottom:4px; }
+    .status-val { font-size:12px; font-weight:600; }
+    .status-val.ok     { color:var(--green); }
+    .status-val.ghost  { color:var(--ghost); }
+    .status-val.muted  { color:var(--text-muted); }
+    .status-val.warn   { color:var(--yellow); }
+
+    /* ── DATA PERMISSIONS ── */
+    .perm-row {
+      display:flex; align-items:center; gap:14px;
+      padding:13px 0; border-bottom:1px solid rgba(26,45,74,0.5);
+      transition:all 0.3s;
+    }
+    .perm-row:last-child { border-bottom:none; }
+    .perm-icon { font-size:20px; width:30px; text-align:center; flex-shrink:0; }
+    .perm-info { flex:1; }
+    .perm-name { font-size:13px; font-weight:500; color:var(--text-primary); }
+    .perm-desc { font-size:11px; color:var(--text-muted); margin-top:2px; line-height:1.4; }
+    .perm-toggle { width:40px; height:22px; border-radius:11px; background:#1a2d4a; border:1px solid var(--border); position:relative; cursor:pointer; transition:all 0.3s; flex-shrink:0; }
+    .perm-toggle::after { content:''; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:var(--text-muted); transition:all 0.3s; }
+    .perm-toggle.on { background:var(--ghost-dim); border-color:var(--ghost); }
+    .perm-toggle.on::after { left:21px; background:var(--ghost); box-shadow:0 0 6px var(--ghost); }
+    .perm-tag { padding:2px 8px; border-radius:10px; font-size:9px; letter-spacing:1px; border:1px solid; flex-shrink:0; }
+    .perm-tag.allowed { background:var(--green-dim); color:var(--green); border-color:var(--green); }
+    .perm-tag.blocked { background:var(--red-dim);   color:var(--red);   border-color:var(--red); }
+    .perm-tag.ghost   { background:var(--ghost-dim); color:var(--ghost); border-color:var(--ghost); }
+
+    /* ── DOCUMENT PREVIEW ── */
+    .doc-preview {
+      border-radius:10px; overflow:hidden;
+      border:1px solid var(--border); transition:all 1s;
+    }
+    .doc-preview.blurred { border-color:var(--ghost-mid); }
+    .doc-topbar {
+      display:flex; align-items:center; gap:10px; padding:10px 14px;
+      background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border);
+    }
+    .doc-dots { display:flex; gap:5px; }
+    .d-dot { width:10px; height:10px; border-radius:50%; }
+    .d-red { background:#ff5f57; } .d-yellow { background:#febc2e; } .d-green { background:#28c840; }
+    .doc-title { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); flex:1; text-align:center; }
+    .doc-status { font-size:10px; letter-spacing:1px; }
+    .doc-status.reading { color:var(--cyan); }
+    .doc-status.blocked { color:var(--ghost); }
+
+    .doc-body { padding:16px 18px; font-size:12px; line-height:1.9; color:var(--text-primary); min-height:140px; position:relative; }
+    .doc-body .doc-line { transition:filter 0.8s ease, opacity 0.8s ease; }
+    .doc-body .doc-line.blur { filter:blur(5px); opacity:0.3; user-select:none; }
+    .doc-body .doc-line.partial { filter:blur(2px); opacity:0.5; }
+
+    .ghost-overlay {
+      position:absolute; inset:0; display:none;
+      align-items:center; justify-content:center; flex-direction:column; gap:8px;
+      background:rgba(12,8,25,0.7); backdrop-filter:blur(4px);
+      border-radius:0 0 10px 10px;
+    }
+    .ghost-overlay.show { display:flex; }
+    .ghost-overlay-icon { font-size:32px; }
+    .ghost-overlay-text { font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:3px; color:var(--ghost); }
+    .ghost-overlay-sub  { font-size:11px; color:var(--text-muted); }
+
+    /* ── KNOX SHIELD ── */
+    .knox-shield {
+      background:linear-gradient(135deg, #0d1020, #150c2a);
+      border:1px solid var(--ghost-mid);
+      box-shadow:0 0 40px rgba(124,58,237,0.1);
+    }
+    .knox-shield::before { background:linear-gradient(90deg,transparent,var(--ghost-mid),transparent); }
+    .knox-ring {
+      width:110px; height:110px; border-radius:50%;
+      margin:0 auto 16px;
+      display:flex; align-items:center; justify-content:center;
+      position:relative;
+    }
+    .knox-ring svg { position:absolute; }
+    .knox-icon { font-size:40px; position:relative; z-index:1; }
+    .knox-name { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:800; letter-spacing:3px; color:var(--ghost); text-align:center; margin-bottom:6px; }
+    .knox-sub  { font-size:11px; color:var(--text-muted); text-align:center; margin-bottom:20px; }
+    .knox-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(26,45,74,0.4); font-size:12px; }
+    .knox-item:last-child { border-bottom:none; }
+    .knox-check { width:18px; height:18px; border-radius:50%; background:var(--ghost-dim); border:1px solid var(--ghost); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--ghost); flex-shrink:0; }
+    .knox-text { color:var(--text-muted); }
+    .knox-text strong { color:var(--text-primary); }
+
+    /* ── AUDIT LOG ── */
+    .log-row {
+      display:flex; align-items:flex-start; gap:12px;
+      padding:10px 0; border-bottom:1px solid rgba(26,45,74,0.4);
+      font-size:12px;
+    }
+    .log-row:last-child { border-bottom:none; }
+    .log-time { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted); flex-shrink:0; width:50px; margin-top:1px; }
+    .log-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+    .log-dot.block  { background:var(--ghost); box-shadow:0 0 5px var(--ghost); }
+    .log-dot.allow  { background:var(--green);  box-shadow:0 0 5px var(--green); }
+    .log-dot.warn   { background:var(--yellow); box-shadow:0 0 5px var(--yellow); }
+    .log-content { flex:1; }
+    .log-action  { color:var(--text-primary); }
+    .log-detail  { font-size:10px; color:var(--text-muted); margin-top:2px; }
+    .log-tag { padding:1px 7px; border-radius:10px; font-size:9px; border:1px solid; flex-shrink:0; margin-top:1px; }
+    .log-tag.blocked { background:var(--ghost-dim); color:var(--ghost); border-color:var(--ghost); }
+    .log-tag.allowed { background:var(--green-dim); color:var(--green); border-color:var(--green); }
+    .log-tag.info    { background:var(--cyan-dim);  color:var(--cyan);  border-color:var(--cyan); }
+
+    /* ── ENCRYPTION VIZ ── */
+    .encrypt-flow { display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+    .enc-step {
+      padding:8px 12px; border-radius:8px; font-size:11px;
+      border:1px solid var(--border); color:var(--text-muted);
+      display:flex; align-items:center; gap:6px; transition:all 0.3s;
+    }
+    .enc-step.active { border-color:var(--ghost); color:var(--ghost); background:var(--ghost-dim); }
+    .enc-arrow { color:var(--border); font-size:14px; transition:color 0.3s; }
+    .enc-arrow.active { color:var(--ghost); }
+
+    /* ── TAGS ── */
+    .tag { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:10px; letter-spacing:1px; border:1px solid; }
+    .tag-green  { background:var(--green-dim);  color:var(--green);  border-color:var(--green); }
+    .tag-cyan   { background:var(--cyan-dim);   color:var(--cyan);   border-color:var(--cyan); }
+    .tag-red    { background:var(--red-dim);    color:var(--red);    border-color:var(--red); }
+    .tag-yellow { background:var(--yellow-dim); color:var(--yellow); border-color:var(--yellow); }
+    .tag-ghost  { background:var(--ghost-dim);  color:var(--ghost);  border-color:var(--ghost); }
+
+    /* ── BUTTONS ── */
+    .btn { padding:9px 18px; border-radius:7px; font-size:12px; cursor:pointer; border:1px solid; font-family:'Inter',sans-serif; transition:all 0.2s; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:6px; }
+    .btn-ghost-purple { background:var(--ghost-dim); border-color:var(--ghost); color:var(--ghost); }
+    .btn-ghost-purple:hover { background:var(--ghost); color:#fff; box-shadow:0 4px 20px rgba(124,58,237,0.4); }
+    .btn-ghost  { background:transparent; border-color:var(--border); color:var(--text-muted); }
+    .btn-ghost:hover { border-color:var(--text-muted); color:var(--text-primary); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:24px; right:28px; background:var(--bg-card); border:1px solid var(--ghost); border-radius:8px; padding:12px 20px; font-size:13px; color:var(--ghost); opacity:0; transform:translateY(10px); transition:all 0.3s; z-index:999; pointer-events:none; max-width:340px; }
+    .toast.show { opacity:1; transform:translateY(0); }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── GHOST MODE PARTICLES ── */
+    #ghostCanvas { position:fixed; inset:0; z-index:1; opacity:0; transition:opacity 1.5s; pointer-events:none; }
+    #ghostCanvas.show { opacity:0.35; }
+  </style>
+  <script>
+    // Auth guard — runs before page renders
+    (function(){
+      try {
+        var s = JSON.parse(localStorage.getItem('meridian_session')||'null');
+        if (!s || Date.now() > s.expiresAt) { localStorage.removeItem('meridian_session'); window.location.replace('index.html'); }
+      } catch(e) { window.location.replace('index.html'); }
+    })();
+  </script>
+</head>
+<body>
+
+<div class="grid-bg" id="gridBg"></div>
+<canvas id="ghostCanvas"></canvas>
+<div class="ghost-vignette" id="ghostVignette"></div>
+<div class="scanline" id="scanline"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text" id="logoText">MERIDIAN</div>
+    <div class="logo-sub">COGNITIVE OS</div>
+  </div>
+  <div class="user-badge">
+    <div class="avatar" id="sideAvatar">AT</div>
+    <div class="user-info">
+      <div class="name">Anika Reddy</div>
+      <div class="role" id="sideRole">SECURITY ENGINEER</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🧠</span> Dashboard</a>
+    <a class="nav-item" href="work.html"><span class="nav-icon">💼</span> Work Resume</a>
+    <a class="nav-item" href="smarthome.html"><span class="nav-icon">🏠</span> Smart Home</a>
+    <a class="nav-item active" href="privacy.html"><span class="nav-icon">🔒</span> Privacy Mode</a>
+    <div class="nav-section">Intelligence</div>
+    <a class="nav-item" href="#"><span class="nav-icon">📊</span> Analytics</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🔔</span> Nudges <span class="nav-badge">3</span></a>
+    <a class="nav-item" href="#"><span class="nav-icon">🔗</span> Integrations</a>
+    <div class="nav-section">System</div>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="index.html"><span class="nav-icon">⏏️</span> Logout</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div style="padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:11px;color:var(--text-muted);cursor:pointer" onclick="masterToggle()" id="sidebarStatus">
+      GHOST LAYER — <span id="sidebarStatusText" style="color:var(--text-muted)">OFF</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar" id="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">PRIVACY MODE</div>
+    <div class="topbar-sub" id="topbarSub">Ghost Layer — Samsung Knox integrated · All processing on-device</div>
+  </div>
+  <div class="topbar-right">
+    <div class="sys-dot"><div class="pulse-dot" id="pulseDot"></div><span id="sysStatus">Normal Mode</span></div>
+    <div class="topbar-clock" id="clock">00:00:00</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<main class="main">
+  <div class="content">
+
+    <!-- ── MASTER TOGGLE HERO ── -->
+    <div class="hero-card mb-20" id="heroCard">
+      <div class="hero-glow"></div>
+      <div class="hero-body">
+        <div class="hero-left">
+          <div class="hero-badge off" id="heroBadge">
+            <div class="hero-badge-dot" id="heroBadgeDot"></div>
+            <span id="heroBadgeText">GHOST LAYER INACTIVE</span>
+          </div>
+          <div class="hero-title">
+            <span class="ht-normal">MERIDIAN </span><span class="ht-ghost">GHOST LAYER</span>
+          </div>
+          <div class="hero-desc" id="heroDesc">
+            Toggle <strong>Private Mode</strong> to stop Meridian from reading the <strong>content</strong> of your documents, messages, and files.
+            App names and window titles remain tracked for context switching, but <strong>no file content, message text, or sensitive data</strong> will be read or stored.
+            All processing remains <strong>on-device via Samsung Knox</strong> — nothing leaves your phone.
+          </div>
+          <!-- Encryption flow -->
+          <div class="encrypt-flow" id="encFlow" style="margin-top:16px">
+            <div class="enc-step" id="enc1">📦 Data Packet</div>
+            <div class="enc-arrow" id="earr1">→</div>
+            <div class="enc-step" id="enc2">🔐 Local Encryption</div>
+            <div class="enc-arrow" id="earr2">→</div>
+            <div class="enc-step" id="enc3">🧠 On-Device LLM</div>
+            <div class="enc-arrow" id="earr3">→</div>
+            <div class="enc-step" id="enc4">🛡️ Knox Vault</div>
+          </div>
+        </div>
+        <div class="hero-right">
+          <div class="big-toggle" id="masterToggleBtn" onclick="masterToggle()">
+            <div class="big-toggle-pip" id="bigPip">🔓</div>
+          </div>
+          <div class="toggle-label" id="toggleLabel">CLICK TO ENABLE</div>
+        </div>
+      </div>
+
+      <!-- Status indicators -->
+      <div class="status-grid" id="statusGrid">
+        <div class="status-item" id="si1">
+          <div class="status-icon">📄</div>
+          <div class="status-label">DOC READING</div>
+          <div class="status-val ok" id="si1-val">ALLOWED</div>
+        </div>
+        <div class="status-item" id="si2">
+          <div class="status-icon">💬</div>
+          <div class="status-label">MSG CONTENT</div>
+          <div class="status-val ok" id="si2-val">ALLOWED</div>
+        </div>
+        <div class="status-item" id="si3">
+          <div class="status-icon">🔄</div>
+          <div class="status-label">APP TRACKING</div>
+          <div class="status-val ok" id="si3-val">ACTIVE</div>
+        </div>
+        <div class="status-item" id="si4">
+          <div class="status-icon">☁️</div>
+          <div class="status-label">CLOUD SYNC</div>
+          <div class="status-val muted" id="si4-val">LOCAL ONLY</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 2: DOCUMENT PREVIEW + DATA PERMISSIONS ── -->
+    <div class="grid-2">
+
+      <!-- Document Preview Demo -->
+      <div class="card" id="docCard" style="animation-delay:0.1s">
+        <div class="card-label">
+          <div class="card-label-dot" id="docDot"></div>
+          DOCUMENT CONTENT — LIVE DEMO
+        </div>
+        <div class="doc-preview" id="docPreview">
+          <div class="doc-topbar">
+            <div class="doc-dots">
+              <div class="d-dot d-red"></div>
+              <div class="d-dot d-yellow"></div>
+              <div class="d-dot d-green"></div>
+            </div>
+            <div class="doc-title">confidential_report_Q2.docx</div>
+            <div class="doc-status reading" id="docStatus">● READING</div>
+          </div>
+          <div class="doc-body" id="docBody">
+            <div class="doc-line" id="dl1">Project Meridian — Q2 Confidential Report</div>
+            <div class="doc-line" id="dl2">Revenue targets: <strong>$4.2M</strong> by end of quarter</div>
+            <div class="doc-line" id="dl3" style="color:var(--red)">Knox API Key: <strong>mk-9f2a-xxxx-4b81-knox</strong></div>
+            <div class="doc-line" id="dl4">User credentials stored in vault: <strong>admin@meridian.io</strong></div>
+            <div class="doc-line" id="dl5">Private notes: Meeting with Samsung exec on May 12th</div>
+            <div class="doc-line" id="dl6" style="color:var(--text-muted)">Behavioral data summary attached in appendix...</div>
+            <div class="ghost-overlay" id="ghostOverlay">
+              <div class="ghost-overlay-icon">🛡️</div>
+              <div class="ghost-overlay-text">CONTENT BLOCKED</div>
+              <div class="ghost-overlay-sub">Ghost Layer is active — document content hidden</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <span class="tag" id="docTagMode" style="background:var(--green-dim);color:var(--green);border-color:var(--green)">● Normal Mode</span>
+          <span style="font-size:11px;color:var(--text-muted)">Toggle Ghost Layer to see content blocking</span>
+        </div>
+      </div>
+
+      <!-- Data Permissions -->
+      <div class="card" id="permCard" style="animation-delay:0.15s">
+        <div class="card-label">
+          <div class="card-label-dot" id="permDot"></div>
+          DATA ACCESS PERMISSIONS
+        </div>
+        <div class="perm-row">
+          <div class="perm-icon">📄</div>
+          <div class="perm-info">
+            <div class="perm-name">Document Content</div>
+            <div class="perm-desc">Word, PDF, Notion page text — full content reading</div>
+          </div>
+          <div class="perm-tag allowed" id="ptag-doc">ALLOWED</div>
+          <div class="perm-toggle on" id="ptog-doc" onclick="togglePerm(this,'ptag-doc','Document content')"></div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-icon">💬</div>
+          <div class="perm-info">
+            <div class="perm-name">Message Content</div>
+            <div class="perm-desc">WhatsApp, Slack message body text</div>
+          </div>
+          <div class="perm-tag allowed" id="ptag-msg">ALLOWED</div>
+          <div class="perm-toggle on" id="ptog-msg" onclick="togglePerm(this,'ptag-msg','Message content')"></div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-icon">🔄</div>
+          <div class="perm-info">
+            <div class="perm-name">App Switching Events</div>
+            <div class="perm-desc">Which apps opened/closed — always tracked</div>
+          </div>
+          <div class="perm-tag ghost" id="ptag-app">ALWAYS ON</div>
+          <div class="perm-toggle on" style="opacity:0.4;cursor:not-allowed" id="ptog-app"></div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-icon">⌨️</div>
+          <div class="perm-info">
+            <div class="perm-name">Keyboard Input</div>
+            <div class="perm-desc">Keystrokes — never captured in any mode</div>
+          </div>
+          <div class="perm-tag blocked" id="ptag-keys">NEVER</div>
+          <div class="perm-toggle" style="opacity:0.4;cursor:not-allowed" id="ptog-keys"></div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-icon">📷</div>
+          <div class="perm-info">
+            <div class="perm-name">Screen Capture</div>
+            <div class="perm-desc">Screenshots or screen recording</div>
+          </div>
+          <div class="perm-tag blocked" id="ptag-screen">NEVER</div>
+          <div class="perm-toggle" style="opacity:0.4;cursor:not-allowed" id="ptog-screen"></div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-icon">📍</div>
+          <div class="perm-info">
+            <div class="perm-name">Location Data</div>
+            <div class="perm-desc">GPS coordinates for smart home routines</div>
+          </div>
+          <div class="perm-tag allowed" id="ptag-loc">ALLOWED</div>
+          <div class="perm-toggle on" id="ptog-loc" onclick="togglePerm(this,'ptag-loc','Location data')"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 3: KNOX SHIELD + AUDIT LOG ── -->
+    <div class="grid-3-1">
+
+      <!-- Audit Log -->
+      <div class="card" style="animation-delay:0.2s">
+        <div class="card-label"><div class="card-label-dot" id="auditDot"></div>PRIVACY AUDIT LOG <span style="margin-left:auto" class="tag tag-cyan" id="auditCount">12 events today</span></div>
+        <div id="auditLog">
+          <div class="log-row">
+            <div class="log-time">13:14</div>
+            <div class="log-dot allow"></div>
+            <div class="log-content">
+              <div class="log-action">VS Code — file access event logged</div>
+              <div class="log-detail">src/auth/auth.service.ts · metadata only</div>
+            </div>
+            <div class="log-tag allowed">ALLOWED</div>
+          </div>
+          <div class="log-row">
+            <div class="log-time">13:05</div>
+            <div class="log-dot warn"></div>
+            <div class="log-content">
+              <div class="log-action">WhatsApp — message body scan requested</div>
+              <div class="log-detail">Scan &amp; Sync looking for deadline keywords</div>
+            </div>
+            <div class="log-tag info">INFO</div>
+          </div>
+          <div class="log-row">
+            <div class="log-time">12:58</div>
+            <div class="log-dot allow"></div>
+            <div class="log-content">
+              <div class="log-action">Ghost Layer deactivated by user</div>
+              <div class="log-detail">Session resumed · Context restored</div>
+            </div>
+            <div class="log-tag allowed">USER ACTION</div>
+          </div>
+          <div class="log-row">
+            <div class="log-time">12:50</div>
+            <div class="log-dot block"></div>
+            <div class="log-content">
+              <div class="log-action">confidential_report_Q2.docx — content blocked</div>
+              <div class="log-detail">Ghost Layer active · Only filename logged</div>
+            </div>
+            <div class="log-tag blocked">BLOCKED</div>
+          </div>
+          <div class="log-row">
+            <div class="log-time">12:48</div>
+            <div class="log-dot block"></div>
+            <div class="log-content">
+              <div class="log-action">Slack DM content — blocked</div>
+              <div class="log-detail">Private channel · Message body not read</div>
+            </div>
+            <div class="log-tag blocked">BLOCKED</div>
+          </div>
+          <div class="log-row">
+            <div class="log-time">12:45</div>
+            <div class="log-dot block"></div>
+            <div class="log-content">
+              <div class="log-action">Ghost Layer activated by user</div>
+              <div class="log-detail">Knox encryption wrapper engaged</div>
+            </div>
+            <div class="log-tag blocked">GHOST ON</div>
+          </div>
+          <div class="log-row">
+            <div class="log-time">11:32</div>
+            <div class="log-dot allow"></div>
+            <div class="log-content">
+              <div class="log-action">WhatsApp — deadline keyword detected</div>
+              <div class="log-detail">"submit by Friday" → pushed to Calendar</div>
+            </div>
+            <div class="log-tag allowed">SCAN &amp; SYNC</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px">
+          <button class="btn btn-ghost" style="font-size:11px;padding:6px 14px;flex:1" onclick="clearLog()">🗑 Clear Log</button>
+          <button class="btn btn-ghost-purple" style="font-size:11px;padding:6px 14px;flex:1" onclick="showToast('📋 Audit log exported securely')">📋 Export</button>
+        </div>
+      </div>
+
+      <!-- Knox Shield -->
+      <div class="card knox-shield" style="animation-delay:0.25s">
+        <div class="knox-ring">
+          <svg width="110" height="110" viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="48" fill="none" stroke="#2d1b5e" stroke-width="6"/>
+            <circle cx="55" cy="55" r="48" fill="none" stroke="url(#knoxGrad)" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="75"
+              transform="rotate(-90 55 55)"/>
+            <defs>
+              <linearGradient id="knoxGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#a78bfa"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="knox-icon">🛡️</div>
+        </div>
+        <div class="knox-name">SAMSUNG KNOX</div>
+        <div class="knox-sub">Enterprise Security Layer</div>
+
+        <div class="knox-item">
+          <div class="knox-check">✓</div>
+          <div class="knox-text"><strong>TrustZone</strong> hardware isolation active</div>
+        </div>
+        <div class="knox-item">
+          <div class="knox-check">✓</div>
+          <div class="knox-text"><strong>AES-256</strong> local data encryption</div>
+        </div>
+        <div class="knox-item">
+          <div class="knox-check">✓</div>
+          <div class="knox-text"><strong>Secure Enclave</strong> for LLM processing</div>
+        </div>
+        <div class="knox-item">
+          <div class="knox-check">✓</div>
+          <div class="knox-text"><strong>Zero data</strong> transmitted to cloud</div>
+        </div>
+        <div class="knox-item">
+          <div class="knox-check">✓</div>
+          <div class="knox-text"><strong>FIPS 140-2</strong> certified vault</div>
+        </div>
+        <div style="margin-top:16px;padding:10px 12px;background:var(--ghost-dim);border:1px solid var(--ghost-mid);border-radius:8px;text-align:center">
+          <div style="font-size:10px;letter-spacing:2px;color:var(--ghost)">THREAT LEVEL</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:18px;font-weight:800;color:var(--green);margin-top:4px">SECURE</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── CLOCK ──
+  function tick() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-US',{hour12:false});
+  }
+  tick(); setInterval(tick,1000);
+
+  // ── GHOST MODE STATE ──
+  let ghostOn = false;
+
+  function masterToggle() {
+    ghostOn = !ghostOn;
+    applyGhostMode(ghostOn);
+    addAuditEntry(ghostOn);
+  }
+
+  function applyGhostMode(on) {
+    // Hero card
+    const heroCard = document.getElementById('heroCard');
+    heroCard.classList.toggle('ghost-active', on);
+
+    // Badge
+    document.getElementById('heroBadge').className = on ? 'hero-badge' : 'hero-badge off';
+    document.getElementById('heroBadgeText').textContent = on ? 'GHOST LAYER ACTIVE' : 'GHOST LAYER INACTIVE';
+
+    // Toggle button
+    document.getElementById('masterToggleBtn').classList.toggle('on', on);
+    document.getElementById('bigPip').textContent = on ? '🔒' : '🔓';
+    document.getElementById('toggleLabel').textContent = on ? 'GHOST LAYER ON' : 'CLICK TO ENABLE';
+    document.getElementById('toggleLabel').className = on ? 'toggle-label on' : 'toggle-label';
+
+    // Hero desc
+    document.getElementById('heroDesc').innerHTML = on
+      ? 'Ghost Layer is <strong>active</strong>. Meridian has <strong>stopped reading</strong> document content, message bodies, and file text. Only app names and window titles are tracked. All data remains in <strong>Samsung Knox Secure Enclave</strong> — fully private.'
+      : 'Toggle <strong>Private Mode</strong> to stop Meridian from reading the <strong>content</strong> of your documents, messages, and files. App names and window titles remain tracked for context switching, but <strong>no file content, message text, or sensitive data</strong> will be read or stored. All processing remains <strong>on-device via Samsung Knox</strong> — nothing leaves your phone.';
+
+    // Encryption flow
+    ['enc1','enc2','enc3','enc4','earr1','earr2','earr3'].forEach(id => {
+      document.getElementById(id).classList.toggle('active', on);
+    });
+
+    // Status indicators
+    if(on) {
+      setStatusItem('si1','si1-val','📄','DOC READING',  'BLOCKED',  'ghost', true);
+      setStatusItem('si2','si2-val','💬','MSG CONTENT',  'BLOCKED',  'ghost', true);
+      setStatusItem('si3','si3-val','🔄','APP TRACKING', 'ACTIVE',   'ok',    true);
+      setStatusItem('si4','si4-val','☁️','CLOUD SYNC',   'DISABLED', 'ghost', true);
+    } else {
+      setStatusItem('si1','si1-val','📄','DOC READING',  'ALLOWED',  'ok',    false);
+      setStatusItem('si2','si2-val','💬','MSG CONTENT',  'ALLOWED',  'ok',    false);
+      setStatusItem('si3','si3-val','🔄','APP TRACKING', 'ACTIVE',   'ok',    false);
+      setStatusItem('si4','si4-val','☁️','CLOUD SYNC',   'LOCAL ONLY','muted',false);
+    }
+
+    // UI elements
+    ['gridBg','sidebar','topbar','scanline'].forEach(id => {
+      document.getElementById(id)?.classList.toggle('ghost-active', on);
+    });
+    document.getElementById('ghostVignette').classList.toggle('active', on);
+    document.getElementById('sideAvatar').classList.toggle('ghost-active', on);
+    document.getElementById('sideRole').classList.toggle('ghost-active', on);
+    document.getElementById('logoText').classList.toggle('ghost-active', on);
+    document.getElementById('pulseDot').classList.toggle('ghost-active', on);
+    document.getElementById('sysStatus').textContent = on ? 'Ghost Layer ACTIVE' : 'Normal Mode';
+    document.getElementById('topbarSub').textContent = on
+      ? 'GHOST LAYER ENGAGED — Document content blocked · Knox Secure Enclave active'
+      : 'Ghost Layer — Samsung Knox integrated · All processing on-device';
+    document.getElementById('sidebarStatusText').textContent = on ? 'ACTIVE' : 'OFF';
+    document.getElementById('sidebarStatusText').style.color = on ? 'var(--ghost)' : 'var(--text-muted)';
+
+    // Card tints
+    ['docCard','permCard'].forEach(id => {
+      document.getElementById(id)?.classList.toggle('ghost-tint', on);
+    });
+    ['docDot','permDot','auditDot'].forEach(id => {
+      document.getElementById(id)?.classList.toggle('ghost', on);
+    });
+
+    // Document preview
+    applyDocBlur(on);
+
+    // Topbar clock
+    document.getElementById('clock').classList.toggle('ghost-active', on);
+
+    // Ghost canvas particles
+    document.getElementById('ghostCanvas').classList.toggle('show', on);
+    if(on) startGhostParticles(); else stopGhostParticles();
+
+    showToast(on
+      ? '🛡️ Ghost Layer ACTIVE — Document content is now blocked'
+      : '👁️ Ghost Layer OFF — Normal monitoring resumed');
+  }
+
+  function setStatusItem(itemId, valId, icon, label, val, cls, active) {
+    const item = document.getElementById(itemId);
+    item.classList.toggle('active', active);
+    document.getElementById(valId).textContent = val;
+    document.getElementById(valId).className = 'status-val ' + cls;
+  }
+
+  // ── DOCUMENT BLUR ──
+  function applyDocBlur(on) {
+    const lines   = ['dl1','dl2','dl3','dl4','dl5','dl6'];
+    const overlay = document.getElementById('ghostOverlay');
+    const preview = document.getElementById('docPreview');
+    const status  = document.getElementById('docStatus');
+    const tagMode = document.getElementById('docTagMode');
+
+    if(on) {
+      lines.forEach((id,i) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if(el) el.classList.add(i < 2 ? 'partial' : 'blur');
+        }, i * 80);
+      });
+      setTimeout(() => overlay.classList.add('show'), 500);
+      preview.classList.add('blurred');
+      status.textContent = '🛡️ BLOCKED';
+      status.className = 'doc-status blocked';
+      tagMode.style.cssText = 'background:var(--ghost-dim);color:var(--ghost);border-color:var(--ghost)';
+      tagMode.textContent = '🛡️ Ghost Mode';
+    } else {
+      lines.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) { el.classList.remove('blur','partial'); }
+      });
+      overlay.classList.remove('show');
+      preview.classList.remove('blurred');
+      status.textContent = '● READING';
+      status.className = 'doc-status reading';
+      tagMode.style.cssText = 'background:var(--green-dim);color:var(--green);border-color:var(--green)';
+      tagMode.textContent = '● Normal Mode';
+    }
+  }
+
+  // ── PERMISSION TOGGLE ──
+  function togglePerm(el, tagId, name) {
+    el.classList.toggle('on');
+    const tag = document.getElementById(tagId);
+    const isOn = el.classList.contains('on');
+    if(isOn) {
+      tag.className = 'perm-tag allowed';
+      tag.textContent = 'ALLOWED';
+    } else {
+      tag.className = 'perm-tag blocked';
+      tag.textContent = 'BLOCKED';
+    }
+    showToast(isOn ? `✓ ${name} — access allowed` : `🛡️ ${name} — access blocked`);
+  }
+
+  // ── AUDIT LOG ──
+  function addAuditEntry(on) {
+    const log = document.getElementById('auditLog');
+    const now = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    row.style.background = on ? 'rgba(124,58,237,0.06)' : 'rgba(0,255,136,0.04)';
+    row.innerHTML = `
+      <div class="log-time">${now}</div>
+      <div class="log-dot ${on?'block':'allow'}"></div>
+      <div class="log-content">
+        <div class="log-action">Ghost Layer ${on?'activated':'deactivated'} by user</div>
+        <div class="log-detail">${on?'Knox encryption wrapper engaged · Content blocking active':'Normal mode restored · Content reading resumed'}</div>
+      </div>
+      <div class="log-tag ${on?'blocked':'allowed'}">${on?'GHOST ON':'GHOST OFF'}</div>`;
+    log.insertBefore(row, log.firstChild);
+
+    // Update count
+    const countEl = document.getElementById('auditCount');
+    const current = parseInt(countEl.textContent) || 12;
+    countEl.textContent = (current + 1) + ' events today';
+  }
+
+  function clearLog() {
+    if(!confirm('Clear audit log? This cannot be undone.')) return;
+    document.getElementById('auditLog').innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted)">No events logged yet</div>';
+    document.getElementById('auditCount').textContent = '0 events today';
+    showToast('🗑 Audit log cleared');
+  }
+
+  // ── GHOST PARTICLES CANVAS ──
+  const canvas = document.getElementById('ghostCanvas');
+  const ctx    = canvas.getContext('2d');
+  let particles = [], animId = null;
+
+  function resizeCanvas() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function startGhostParticles() {
+    particles = [];
+    for(let i = 0; i < 60; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.5 + 0.5,
+        vx:(Math.random()-0.5)*0.3,
+        vy:(Math.random()-0.5)*0.3,
+        alpha: Math.random() * 0.6 + 0.2
+      });
+    }
+    drawGhostParticles();
+  }
+
+  function drawGhostParticles() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<particles.length;i++) {
+      const p = particles[i];
+      for(let j=i+1;j<particles.length;j++) {
+        const q = particles[j];
+        const dx=p.x-q.x, dy=p.y-q.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<100) {
+          ctx.beginPath();
+          ctx.strokeStyle=`rgba(124,58,237,${0.15*(1-dist/100)})`;
+          ctx.lineWidth=0.5;
+          ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke();
+        }
+      }
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(167,139,250,${p.alpha})`;
+      ctx.fill();
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>canvas.width)  p.vx*=-1;
+      if(p.y<0||p.y>canvas.height) p.vy*=-1;
+    }
+    animId = requestAnimationFrame(drawGhostParticles);
+  }
+
+  function stopGhostParticles() {
+    if(animId) { cancelAnimationFrame(animId); animId=null; }
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>

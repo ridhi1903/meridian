@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MERIDIAN — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --bg-primary:   #040812;
+      --bg-secondary: #080f1e;
+      --bg-card:      #0d1628;
+      --bg-card2:     #0a1220;
+      --cyan:         #00d4ff;
+      --cyan-dim:     #00d4ff22;
+      --cyan-mid:     #00d4ff44;
+      --green:        #00ff88;
+      --green-dim:    #00ff8822;
+      --yellow:       #ffd700;
+      --yellow-dim:   #ffd70022;
+      --red:          #ff4757;
+      --red-dim:      #ff475722;
+      --purple:       #7c3aed;
+      --purple-dim:   #7c3aed22;
+      --text-primary: #e8f4fd;
+      --text-muted:   #6b8aad;
+      --border:       #1a2d4a;
+      --sidebar-w:    240px;
+    }
+
+    html, body { height:100%; background:var(--bg-primary); color:var(--text-primary); font-family:'Inter',sans-serif; overflow-x:hidden; }
+
+    /* ── GRID BG ── */
+    .grid-bg {
+      position:fixed; inset:0; z-index:0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+      background-size:50px 50px;
+      pointer-events:none;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      position:fixed; left:0; top:0; bottom:0;
+      width:var(--sidebar-w);
+      background:rgba(8,15,30,0.95);
+      border-right:1px solid var(--border);
+      backdrop-filter:blur(16px);
+      z-index:100;
+      display:flex;
+      flex-direction:column;
+      padding:0;
+    }
+
+    .sidebar-logo {
+      padding:24px 20px 20px;
+      border-bottom:1px solid var(--border);
+    }
+    .sidebar-logo .logo-text {
+      font-family:'Orbitron',sans-serif;
+      font-size:18px; font-weight:900;
+      letter-spacing:4px;
+      background:linear-gradient(135deg,#fff,var(--cyan));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .sidebar-logo .logo-sub { font-size:10px; color:var(--text-muted); letter-spacing:2px; margin-top:2px; }
+
+    /* User badge */
+    .user-badge {
+      display:flex; align-items:center; gap:10px;
+      padding:16px 20px;
+      border-bottom:1px solid var(--border);
+    }
+    .avatar {
+      width:36px; height:36px; border-radius:50%;
+      background:linear-gradient(135deg,var(--cyan),var(--purple));
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700;
+      color:#040812; flex-shrink:0;
+    }
+    .user-info .name { font-size:13px; font-weight:600; color:var(--text-primary); }
+    .user-info .role { font-size:10px; color:var(--cyan); letter-spacing:1px; }
+
+    /* Nav */
+    .nav { flex:1; padding:16px 0; overflow-y:auto; }
+    .nav-section { padding:8px 20px 4px; font-size:9px; letter-spacing:3px; color:#2a3d55; text-transform:uppercase; }
+    .nav-item {
+      display:flex; align-items:center; gap:12px;
+      padding:10px 20px; cursor:pointer;
+      color:var(--text-muted); font-size:13px;
+      transition:all 0.2s; text-decoration:none;
+      position:relative;
+    }
+    .nav-item:hover { color:var(--text-primary); background:rgba(0,212,255,0.04); }
+    .nav-item.active {
+      color:var(--cyan);
+      background:var(--cyan-dim);
+    }
+    .nav-item.active::before {
+      content:'';
+      position:absolute; left:0; top:0; bottom:0;
+      width:3px; background:var(--cyan);
+      border-radius:0 2px 2px 0;
+    }
+    .nav-icon { font-size:16px; width:20px; text-align:center; }
+    .nav-badge {
+      margin-left:auto; padding:2px 7px;
+      background:var(--red); border-radius:10px;
+      font-size:10px; color:#fff; font-weight:600;
+    }
+
+    /* Sidebar bottom */
+    .sidebar-bottom {
+      padding:16px 20px;
+      border-top:1px solid var(--border);
+    }
+    .privacy-toggle-mini {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px;
+      background:var(--bg-card); border:1px solid var(--border); border-radius:8px;
+      cursor:pointer; transition:all 0.2s;
+    }
+    .privacy-toggle-mini:hover { border-color:var(--cyan); }
+    .privacy-toggle-mini .label { font-size:11px; color:var(--text-muted); letter-spacing:1px; }
+    .toggle-pip {
+      width:32px; height:18px; background:#1a2d4a; border-radius:10px;
+      position:relative; transition:background 0.3s;
+    }
+    .toggle-pip::after {
+      content:''; position:absolute; top:3px; left:3px;
+      width:12px; height:12px; border-radius:50%;
+      background:var(--text-muted); transition:all 0.3s;
+    }
+    .toggle-pip.on { background:var(--cyan-mid); }
+    .toggle-pip.on::after { left:17px; background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      position:fixed; top:0; left:var(--sidebar-w); right:0;
+      height:60px; z-index:90;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 28px;
+      background:rgba(4,8,18,0.9);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+    }
+    .topbar-left { display:flex; flex-direction:column; }
+    .topbar-title { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:600; letter-spacing:3px; color:var(--text-primary); }
+    .topbar-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .topbar-right { display:flex; align-items:center; gap:20px; }
+    .topbar-clock { font-family:'Orbitron',sans-serif; font-size:13px; color:var(--cyan); letter-spacing:2px; }
+    .sys-dot { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); }
+    .pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      margin-left:var(--sidebar-w);
+      padding-top:60px;
+      min-height:100vh;
+      position:relative; z-index:10;
+    }
+    .content { padding:24px 28px; }
+
+    /* ── GREETING BANNER ── */
+    .greeting {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:24px;
+    }
+    .greeting-text h1 { font-size:22px; font-weight:600; color:var(--text-primary); }
+    .greeting-text h1 span { color:var(--cyan); }
+    .greeting-text p { font-size:13px; color:var(--text-muted); margin-top:4px; }
+    .date-badge {
+      padding:8px 16px; background:var(--bg-card); border:1px solid var(--border);
+      border-radius:8px; font-size:12px; color:var(--text-muted);
+    }
+    .date-badge strong { color:var(--text-primary); display:block; font-size:13px; }
+
+    /* ── GRID LAYOUTS ── */
+    .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+    .grid-3-2 { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:20px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+
+    /* ── CARD BASE ── */
+    .card {
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:20px;
+      position:relative;
+      overflow:hidden;
+      transition:border-color 0.3s, box-shadow 0.3s;
+    }
+    .card:hover { border-color:#253d5a; }
+    .card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      background:linear-gradient(90deg,transparent,var(--cyan-dim),transparent);
+    }
+    .card-label {
+      font-size:10px; letter-spacing:3px; text-transform:uppercase;
+      color:var(--text-muted); margin-bottom:12px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .card-label-dot { width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+
+    /* ── STAT CARDS ── */
+    .stat-card { text-align:center; }
+    .stat-icon { font-size:22px; margin-bottom:8px; }
+    .stat-value { font-family:'Orbitron',sans-serif; font-size:28px; font-weight:800; line-height:1; }
+    .stat-value.cyan   { color:var(--cyan);   text-shadow:0 0 20px var(--cyan-mid); }
+    .stat-value.green  { color:var(--green);  text-shadow:0 0 20px var(--green-dim); }
+    .stat-value.yellow { color:var(--yellow); text-shadow:0 0 20px var(--yellow-dim); }
+    .stat-value.purple { color:#a78bfa;       text-shadow:0 0 20px var(--purple-dim); }
+    .stat-label { font-size:11px; color:var(--text-muted); margin-top:6px; letter-spacing:1px; }
+    .stat-change { font-size:10px; margin-top:4px; }
+    .stat-change.up   { color:var(--green); }
+    .stat-change.down { color:var(--red); }
+
+    /* ── COGNITIVE SCORE ── */
+    .score-wrap { display:flex; align-items:center; gap:28px; }
+    .score-ring-container { position:relative; flex-shrink:0; }
+    .score-ring-container svg { transform:rotate(-90deg); }
+    .score-center {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+    }
+    .score-num {
+      font-family:'Orbitron',sans-serif; font-size:36px; font-weight:900;
+      color:var(--cyan); text-shadow:0 0 20px var(--cyan-mid);
+      line-height:1;
+    }
+    .score-max { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .score-status {
+      font-size:11px; letter-spacing:2px; text-transform:uppercase;
+      color:var(--green); margin-top:4px;
+    }
+    .score-details { flex:1; }
+    .score-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .score-bar-label { font-size:11px; color:var(--text-muted); width:100px; flex-shrink:0; }
+    .score-bar-track {
+      flex:1; height:6px; background:rgba(255,255,255,0.05);
+      border-radius:3px; overflow:hidden;
+    }
+    .score-bar-fill { height:100%; border-radius:3px; transition:width 1.5s cubic-bezier(0.4,0,0.2,1); width:0; }
+    .fill-cyan   { background:linear-gradient(90deg,var(--cyan),#0099cc); box-shadow:0 0 8px var(--cyan-mid); }
+    .fill-green  { background:linear-gradient(90deg,var(--green),#00cc66); box-shadow:0 0 8px var(--green-dim); }
+    .fill-yellow { background:linear-gradient(90deg,var(--yellow),#ffaa00); box-shadow:0 0 8px var(--yellow-dim); }
+    .fill-purple { background:linear-gradient(90deg,#a78bfa,var(--purple)); box-shadow:0 0 8px var(--purple-dim); }
+    .score-bar-val { font-size:11px; color:var(--text-muted); width:30px; text-align:right; flex-shrink:0; }
+
+    /* ── CHART AREA ── */
+    .chart-wrap { height:140px; position:relative; margin-top:8px; }
+    canvas.chart { width:100%; height:100%; }
+
+    /* ── ACTIVITY TIMELINE ── */
+    .timeline { display:flex; flex-direction:column; gap:0; }
+    .timeline-item {
+      display:flex; align-items:flex-start; gap:12px;
+      padding:10px 0; border-bottom:1px solid rgba(26,45,74,0.5);
+      position:relative;
+    }
+    .timeline-item:last-child { border-bottom:none; }
+    .t-dot {
+      width:10px; height:10px; border-radius:50%;
+      flex-shrink:0; margin-top:3px;
+    }
+    .t-dot.cyan   { background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+    .t-dot.green  { background:var(--green); box-shadow:0 0 6px var(--green); }
+    .t-dot.yellow { background:var(--yellow); box-shadow:0 0 6px var(--yellow); }
+    .t-dot.red    { background:var(--red); box-shadow:0 0 6px var(--red); }
+    .t-line { position:absolute; left:4px; top:20px; bottom:0; width:1px; background:var(--border); }
+    .t-content { flex:1; }
+    .t-app { font-size:13px; font-weight:500; color:var(--text-primary); }
+    .t-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .t-time { font-size:10px; color:var(--text-muted); flex-shrink:0; margin-top:3px; font-family:'Orbitron',sans-serif; }
+
+    /* ── NUDGES ── */
+    .nudge-list { display:flex; flex-direction:column; gap:10px; }
+    .nudge {
+      display:flex; align-items:flex-start; gap:12px;
+      padding:12px; border-radius:8px;
+      border:1px solid var(--border); background:rgba(255,255,255,0.01);
+      transition:all 0.2s; cursor:pointer;
+    }
+    .nudge:hover { border-color:var(--cyan); background:var(--cyan-dim); }
+    .nudge-icon { font-size:20px; flex-shrink:0; }
+    .nudge-text { font-size:12px; color:var(--text-primary); line-height:1.5; }
+    .nudge-time { font-size:10px; color:var(--text-muted); margin-top:4px; }
+    .nudge-dismiss {
+      margin-left:auto; flex-shrink:0;
+      width:20px; height:20px; border-radius:50%;
+      background:rgba(255,255,255,0.04);
+      border:none; color:var(--text-muted);
+      cursor:pointer; font-size:12px;
+      display:flex; align-items:center; justify-content:center;
+      transition:all 0.2s;
+    }
+    .nudge-dismiss:hover { background:var(--red-dim); color:var(--red); }
+
+    /* ── DISTRACTION LOOP CARD ── */
+    .loop-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+    .loop-badge {
+      padding:4px 10px; border-radius:20px;
+      font-size:10px; letter-spacing:1px; font-weight:600;
+      background:var(--red-dim); color:var(--red); border:1px solid var(--red);
+    }
+    .loop-badge.safe { background:var(--green-dim); color:var(--green); border-color:var(--green); }
+    .loop-chain { display:flex; align-items:center; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+    .loop-app {
+      padding:6px 12px; border-radius:6px;
+      background:var(--bg-card2); border:1px solid var(--border);
+      font-size:12px; color:var(--text-primary);
+      display:flex; align-items:center; gap:6px;
+    }
+    .loop-arrow { color:var(--red); font-size:12px; }
+    .loop-count {
+      font-family:'Orbitron',sans-serif; font-size:32px; font-weight:900;
+      color:var(--red); text-shadow:0 0 20px var(--red-dim);
+    }
+    .loop-label { font-size:11px; color:var(--text-muted); margin-top:4px; }
+
+    /* Loop score gauge */
+    .loop-gauge { display:flex; align-items:center; gap:12px; margin-top:12px; }
+    .gauge-track {
+      flex:1; height:8px; background:rgba(255,255,255,0.05);
+      border-radius:4px; overflow:hidden;
+    }
+    .gauge-fill {
+      height:100%; border-radius:4px;
+      background:linear-gradient(90deg,var(--green),var(--yellow),var(--red));
+      transition:width 1.5s ease;
+    }
+    .gauge-val { font-size:12px; color:var(--text-muted); flex-shrink:0; }
+
+    /* ── APP USAGE BARS ── */
+    .app-list { display:flex; flex-direction:column; gap:10px; }
+    .app-row { display:flex; align-items:center; gap:10px; }
+    .app-icon-sm { font-size:16px; width:24px; text-align:center; flex-shrink:0; }
+    .app-name { font-size:12px; color:var(--text-primary); width:80px; flex-shrink:0; }
+    .app-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden; }
+    .app-bar-fill { height:100%; border-radius:3px; transition:width 1.5s ease; width:0; }
+    .app-time { font-size:11px; color:var(--text-muted); flex-shrink:0; width:36px; text-align:right; }
+
+    /* ── TAGS ── */
+    .tag {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:3px 10px; border-radius:20px;
+      font-size:10px; letter-spacing:1px;
+      border:1px solid;
+    }
+    .tag-green { background:var(--green-dim); color:var(--green); border-color:var(--green); }
+    .tag-cyan  { background:var(--cyan-dim);  color:var(--cyan);  border-color:var(--cyan); }
+    .tag-red   { background:var(--red-dim);   color:var(--red);   border-color:var(--red); }
+    .tag-yellow{ background:var(--yellow-dim);color:var(--yellow);border-color:var(--yellow); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position:fixed; bottom:24px; right:28px;
+      background:var(--bg-card); border:1px solid var(--cyan);
+      border-radius:8px; padding:12px 20px;
+      font-size:13px; color:var(--cyan);
+      opacity:0; transform:translateY(10px);
+      transition:all 0.3s; z-index:999;
+    }
+    .toast.show { opacity:1; transform:translateY(0); }
+
+    /* ── ANIM ── */
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .card { animation:fadeIn 0.5s ease both; }
+  </style>
+  <script>
+    // Auth guard — runs before page renders
+    (function(){
+      try {
+        var s = JSON.parse(localStorage.getItem('meridian_session')||'null');
+        if (!s || Date.now() > s.expiresAt) { localStorage.removeItem('meridian_session'); window.location.replace('index.html'); }
+      } catch(e) { window.location.replace('index.html'); }
+    })();
+  </script>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">MERIDIAN</div>
+    <div class="logo-sub">COGNITIVE OS</div>
+  </div>
+
+  <div class="user-badge">
+    <div class="avatar">AT</div>
+    <div class="user-info">
+      <div class="name">Anika Reddy</div>
+      <div class="role">SECURITY ENGINEER</div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-item active" href="dashboard.html">
+      <span class="nav-icon">🧠</span> Dashboard
+    </a>
+    <a class="nav-item" href="work.html">
+      <span class="nav-icon">💼</span> Work Resume
+    </a>
+    <a class="nav-item" href="smarthome.html">
+      <span class="nav-icon">🏠</span> Smart Home
+    </a>
+    <a class="nav-item" href="privacy.html">
+      <span class="nav-icon">🔒</span> Privacy Mode
+    </a>
+
+    <div class="nav-section">Intelligence</div>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">📊</span> Analytics
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🔔</span> Nudges
+      <span class="nav-badge">3</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🔗</span> Integrations
+    </a>
+
+    <div class="nav-section">System</div>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">⚙️</span> Settings
+    </a>
+    <a class="nav-item" href="index.html">
+      <span class="nav-icon">⏏️</span> Logout
+    </a>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="privacy-toggle-mini" onclick="togglePrivacy(this)">
+      <span class="label">GHOST LAYER</span>
+      <div class="toggle-pip" id="ghostPip"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">COGNITIVE DASHBOARD</div>
+    <div class="topbar-sub">Real-time intelligence layer — OpenCLAW Engine active</div>
+  </div>
+  <div class="topbar-right">
+    <div class="sys-dot">
+      <div class="pulse-dot"></div>
+      <span>7 devices synced</span>
+    </div>
+    <div class="topbar-clock" id="clock">00:00:00</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<main class="main">
+  <div class="content">
+
+    <!-- Greeting -->
+    <div class="greeting">
+      <div class="greeting-text">
+        <h1>Good Morning, <span>Anika</span> 👋</h1>
+        <p>Your cognitive layer is active. Focus session detected — 45 min deep work streak.</p>
+      </div>
+      <div class="date-badge">
+        <strong id="dateStr">Mon, May 5</strong>
+        Week 18 · Q2 2026
+      </div>
+    </div>
+
+    <!-- ── ROW 1: STAT CARDS ── -->
+    <div class="grid-4">
+      <div class="card stat-card" style="animation-delay:0.05s">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-value cyan" id="statScore">78</div>
+        <div class="stat-label">Cognitive Score</div>
+        <div class="stat-change up">↑ +5 from yesterday</div>
+      </div>
+      <div class="card stat-card" style="animation-delay:0.1s">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-value green" id="statFocus">4h 15m</div>
+        <div class="stat-label">Focus Time</div>
+        <div class="stat-change up">↑ Best this week</div>
+      </div>
+      <div class="card stat-card" style="animation-delay:0.15s">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value yellow">7/10</div>
+        <div class="stat-label">Tasks Completed</div>
+        <div class="stat-change up">↑ 3 remaining</div>
+      </div>
+      <div class="card stat-card" style="animation-delay:0.2s">
+        <div class="stat-icon">🔄</div>
+        <div class="stat-value purple">3</div>
+        <div class="stat-label">Meetings Today</div>
+        <div class="stat-change down">↓ Next in 45 min</div>
+      </div>
+    </div>
+
+    <!-- ── ROW 2: COGNITIVE SCORE + CHART ── -->
+    <div class="grid-3-2">
+      <!-- Cognitive Score Ring -->
+      <div class="card" style="animation-delay:0.25s">
+        <div class="card-label"><div class="card-label-dot"></div>COGNITIVE SCORE — LIVE</div>
+        <div class="score-wrap">
+          <div class="score-ring-container">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <!-- Background ring -->
+              <circle cx="70" cy="70" r="58" fill="none" stroke="#1a2d4a" stroke-width="10"/>
+              <!-- Score ring -->
+              <circle cx="70" cy="70" r="58" fill="none"
+                stroke="url(#scoreGrad)" stroke-width="10"
+                stroke-linecap="round"
+                stroke-dasharray="364.4"
+                stroke-dashoffset="364.4"
+                id="scoreRing"/>
+              <defs>
+                <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#00d4ff"/>
+                  <stop offset="100%" stop-color="#00ff88"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="score-center">
+              <div class="score-num" id="ringNum">78</div>
+              <div class="score-max">/100</div>
+              <div class="score-status">GOOD FOCUS</div>
+            </div>
+          </div>
+
+          <div class="score-details">
+            <div class="score-bar-row">
+              <div class="score-bar-label">Focus Depth</div>
+              <div class="score-bar-track"><div class="score-bar-fill fill-cyan" data-w="82"></div></div>
+              <div class="score-bar-val">82%</div>
+            </div>
+            <div class="score-bar-row">
+              <div class="score-bar-label">Task Velocity</div>
+              <div class="score-bar-track"><div class="score-bar-fill fill-green" data-w="70"></div></div>
+              <div class="score-bar-val">70%</div>
+            </div>
+            <div class="score-bar-row">
+              <div class="score-bar-label">Distraction Rate</div>
+              <div class="score-bar-track"><div class="score-bar-fill fill-yellow" data-w="28"></div></div>
+              <div class="score-bar-val">28%</div>
+            </div>
+            <div class="score-bar-row">
+              <div class="score-bar-label">Recovery Speed</div>
+              <div class="score-bar-track"><div class="score-bar-fill fill-purple" data-w="91"></div></div>
+              <div class="score-bar-val">91%</div>
+            </div>
+            <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+              <span class="tag tag-green">Deep Work Active</span>
+              <span class="tag tag-cyan">No Loop Detected</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Focus over time chart -->
+      <div class="card" style="animation-delay:0.3s">
+        <div class="card-label"><div class="card-label-dot"></div>FOCUS SCORE — TODAY</div>
+        <div class="chart-wrap">
+          <canvas id="focusChart"></canvas>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:10px;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted);">
+            <div style="width:10px;height:2px;background:var(--cyan);border-radius:1px;"></div> Focus Score
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted);">
+            <div style="width:10px;height:2px;background:var(--red);border-radius:1px;"></div> Distractions
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 3: ACTIVITY + NUDGES ── -->
+    <div class="grid-2">
+      <!-- Activity Timeline -->
+      <div class="card" style="animation-delay:0.35s">
+        <div class="card-label"><div class="card-label-dot"></div>ACTIVITY TIMELINE</div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="t-dot cyan"></div>
+            <div class="t-line"></div>
+            <div class="t-content">
+              <div class="t-app">VS Code — Auth.js Refactor</div>
+              <div class="t-desc">Deep work session · 45 min · Knox-protected</div>
+            </div>
+            <div class="t-time">10:45</div>
+          </div>
+          <div class="timeline-item">
+            <div class="t-dot yellow"></div>
+            <div class="t-line"></div>
+            <div class="t-content">
+              <div class="t-app">WhatsApp — Team Chat</div>
+              <div class="t-desc">3 messages · Deadline detected: "submit by Friday"</div>
+            </div>
+            <div class="t-time">11:32</div>
+          </div>
+          <div class="timeline-item">
+            <div class="t-dot red"></div>
+            <div class="t-line"></div>
+            <div class="t-content">
+              <div class="t-app">Instagram → YouTube</div>
+              <div class="t-desc">Distraction loop started · Loop score: 62</div>
+            </div>
+            <div class="t-time">12:05</div>
+          </div>
+          <div class="timeline-item">
+            <div class="t-dot green"></div>
+            <div class="t-line"></div>
+            <div class="t-content">
+              <div class="t-app">Meridian Nudge — Break Suggested</div>
+              <div class="t-desc">Returned to VS Code after 8 min recovery</div>
+            </div>
+            <div class="t-time">12:18</div>
+          </div>
+          <div class="timeline-item">
+            <div class="t-dot cyan"></div>
+            <div class="t-content">
+              <div class="t-app">GitHub — PR #47 Pushed</div>
+              <div class="t-desc">Commit: fix(auth): token expiry edge case</div>
+            </div>
+            <div class="t-time">13:10</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Smart Nudges -->
+      <div class="card" style="animation-delay:0.4s">
+        <div class="card-label"><div class="card-label-dot"></div>SMART NUDGES <span class="tag tag-red" style="margin-left:6px;">3 ACTIVE</span></div>
+        <div class="nudge-list" id="nudgeList">
+          <div class="nudge">
+            <div class="nudge-icon">⏱️</div>
+            <div>
+              <div class="nudge-text">You've been in deep flow for 45 min. Consider a 5-minute break to maintain peak performance.</div>
+              <div class="nudge-time">2 min ago</div>
+            </div>
+            <button class="nudge-dismiss" onclick="dismissNudge(this)">×</button>
+          </div>
+          <div class="nudge">
+            <div class="nudge-icon">📅</div>
+            <div>
+              <div class="nudge-text">Deadline detected in WhatsApp: <strong>"submit by Friday"</strong> — Added to Calendar.</div>
+              <div class="nudge-time">31 min ago</div>
+            </div>
+            <button class="nudge-dismiss" onclick="dismissNudge(this)">×</button>
+          </div>
+          <div class="nudge">
+            <div class="nudge-icon">📺</div>
+            <div>
+              <div class="nudge-text">TV in living room has been on for 3h 20m. Turn it off remotely?</div>
+              <div class="nudge-time">1 hr ago</div>
+            </div>
+            <button class="nudge-dismiss" onclick="dismissNudge(this)">×</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 4: DISTRACTION LOOP + APP USAGE ── -->
+    <div class="grid-2">
+      <!-- Distraction Loop -->
+      <div class="card" style="animation-delay:0.45s">
+        <div class="card-label"><div class="card-label-dot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></div>DISTRACTION LOOP DETECTOR</div>
+        <div class="loop-header">
+          <div class="loop-badge" id="loopBadge">LOOP DETECTED</div>
+          <span style="font-size:11px;color:var(--text-muted);">Repeated 3× today</span>
+        </div>
+        <div class="loop-chain">
+          <div class="loop-app">📸 Instagram</div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-app">▶️ YouTube</div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-app">📰 News</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px;">
+          <div>
+            <div class="loop-count" id="loopCount">62</div>
+            <div class="loop-label">Loop Intensity</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Intensity Level</div>
+            <div class="gauge-track">
+              <div class="gauge-fill" id="loopGauge" style="width:0%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px;">
+              <span>Low</span><span>High</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;">
+          <button class="btn-sm cyan" onclick="blockLoop()">🚫 Block Apps (5 sec delay)</button>
+          <button class="btn-sm ghost" onclick="clearLoop()">✓ Clear Detection</button>
+        </div>
+      </div>
+
+      <!-- App Usage -->
+      <div class="card" style="animation-delay:0.5s">
+        <div class="card-label"><div class="card-label-dot"></div>APP USAGE TODAY</div>
+        <div class="app-list">
+          <div class="app-row">
+            <div class="app-icon-sm">💻</div>
+            <div class="app-name">VS Code</div>
+            <div class="app-bar-track"><div class="app-bar-fill fill-cyan" data-w="75"></div></div>
+            <div class="app-time">3h 0m</div>
+          </div>
+          <div class="app-row">
+            <div class="app-icon-sm">📱</div>
+            <div class="app-name">WhatsApp</div>
+            <div class="app-bar-track"><div class="app-bar-fill fill-green" data-w="50"></div></div>
+            <div class="app-time">2h 0m</div>
+          </div>
+          <div class="app-row">
+            <div class="app-icon-sm">🌐</div>
+            <div class="app-name">Chrome</div>
+            <div class="app-bar-track"><div class="app-bar-fill fill-yellow" data-w="37"></div></div>
+            <div class="app-time">1h 30m</div>
+          </div>
+          <div class="app-row">
+            <div class="app-icon-sm">📸</div>
+            <div class="app-name">Instagram</div>
+            <div class="app-bar-track"><div class="app-bar-fill" style="background:linear-gradient(90deg,var(--red),#cc0022)" data-w="100"></div></div>
+            <div class="app-time">4h 0m</div>
+          </div>
+          <div class="app-row">
+            <div class="app-icon-sm">📋</div>
+            <div class="app-name">Notion</div>
+            <div class="app-bar-track"><div class="app-bar-fill fill-purple" data-w="30"></div></div>
+            <div class="app-time">1h 12m</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Inline small button styles -->
+<style>
+  .btn-sm {
+    padding:8px 14px; border-radius:6px; font-size:11px;
+    cursor:pointer; border:1px solid; font-family:'Inter',sans-serif;
+    transition:all 0.2s; letter-spacing:0.5px;
+  }
+  .btn-sm.cyan { background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan); }
+  .btn-sm.cyan:hover { background:var(--cyan); color:#040812; }
+  .btn-sm.ghost { background:transparent; border-color:var(--border); color:var(--text-muted); }
+  .btn-sm.ghost:hover { border-color:var(--green); color:var(--green); }
+</style>
+
+<script>
+  // ── CLOCK ──
+  function tick() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-US',{hour12:false});
+  }
+  tick(); setInterval(tick,1000);
+
+  // ── DATE ──
+  document.getElementById('dateStr').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+  // ── SCORE RING ANIMATION ──
+  window.addEventListener('load', () => {
+    const ring = document.getElementById('scoreRing');
+    const total = 364.4;
+    const score = 78;
+    const offset = total - (score / 100) * total;
+    ring.style.transition = 'stroke-dashoffset 1.8s cubic-bezier(0.4,0,0.2,1)';
+    setTimeout(() => { ring.style.strokeDashoffset = offset; }, 200);
+
+    // Animate score number
+    let cur = 0;
+    const interval = setInterval(() => {
+      cur++;
+      document.getElementById('ringNum').textContent = cur;
+      document.getElementById('statScore').textContent = cur;
+      if (cur >= score) clearInterval(interval);
+    }, 20);
+
+    // Animate progress bars
+    document.querySelectorAll('.score-bar-fill, .app-bar-fill').forEach(bar => {
+      const w = bar.getAttribute('data-w');
+      if (w) setTimeout(() => { bar.style.width = w + '%'; }, 400);
+    });
+
+    // Loop gauge
+    setTimeout(() => {
+      document.getElementById('loopGauge').style.width = '62%';
+    }, 600);
+  });
+
+  // ── PRIVACY TOGGLE ──
+  function togglePrivacy(el) {
+    const pip = document.getElementById('ghostPip');
+    pip.classList.toggle('on');
+    if (pip.classList.contains('on')) {
+      showToast('🔒 Ghost Layer ACTIVE — document content hidden');
+    } else {
+      showToast('👁️ Ghost Layer OFF — normal monitoring');
+    }
+  }
+
+  // ── DISMISS NUDGE ──
+  function dismissNudge(btn) {
+    const nudge = btn.closest('.nudge');
+    nudge.style.opacity = '0';
+    nudge.style.transform = 'translateX(20px)';
+    nudge.style.transition = 'all 0.3s';
+    setTimeout(() => nudge.remove(), 300);
+    showToast('Nudge dismissed');
+  }
+
+  // ── BLOCK LOOP ──
+  function blockLoop() {
+    document.getElementById('loopBadge').textContent = 'LOOP BLOCKED';
+    document.getElementById('loopBadge').className = 'loop-badge safe';
+    document.getElementById('loopCount').textContent = '0';
+    document.getElementById('loopGauge').style.width = '0%';
+    document.getElementById('loopGauge').style.background = 'var(--green)';
+    showToast('🚫 5-second delay applied to Instagram & YouTube');
+  }
+
+  function clearLoop() {
+    document.getElementById('loopBadge').textContent = 'NO LOOP';
+    document.getElementById('loopBadge').className = 'loop-badge safe';
+    showToast('✓ Distraction loop cleared');
+  }
+
+  // ── FOCUS CHART ──
+  function drawFocusChart() {
+    const canvas = document.getElementById('focusChart');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.offsetWidth;
+    const H = canvas.offsetHeight;
+    canvas.width = W; canvas.height = H;
+
+    const hours = ['7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM'];
+    const focus  = [20, 45, 60, 88, 78, 40, 72, 78];
+    const distr  = [5,  10, 15, 8,  30, 55, 20, 12];
+
+    const pad = { top:10, right:10, bottom:30, left:30 };
+    const W2 = W - pad.left - pad.right;
+    const H2 = H - pad.top - pad.bottom;
+
+    function toX(i) { return pad.left + (i / (hours.length-1)) * W2; }
+    function toY(v) { return pad.top + H2 - (v/100)*H2; }
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(26,45,74,0.6)';
+    ctx.lineWidth = 1;
+    [0,25,50,75,100].forEach(v => {
+      const y = toY(v);
+      ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+      ctx.fillStyle = 'rgba(107,138,173,0.5)';
+      ctx.font = '9px Inter';
+      ctx.fillText(v, 2, y+3);
+    });
+
+    // Draw focus line with gradient fill
+    const grad = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+    grad.addColorStop(0, 'rgba(0,212,255,0.3)');
+    grad.addColorStop(1, 'rgba(0,212,255,0)');
+    ctx.beginPath();
+    focus.forEach((v,i) => i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+    ctx.lineTo(toX(focus.length-1), H-pad.bottom);
+    ctx.lineTo(pad.left, H-pad.bottom);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2;
+    focus.forEach((v,i) => i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+    ctx.stroke();
+
+    // Draw distraction line
+    ctx.beginPath();
+    ctx.strokeStyle = '#ff4757'; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+    distr.forEach((v,i) => i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+    ctx.stroke(); ctx.setLineDash([]);
+
+    // X labels
+    ctx.fillStyle = 'rgba(107,138,173,0.7)';
+    ctx.font = '9px Inter';
+    hours.forEach((h,i) => {
+      ctx.fillText(h, toX(i)-10, H-6);
+    });
+  }
+  window.addEventListener('load', drawFocusChart);
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>
