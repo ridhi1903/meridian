@@ -774,13 +774,29 @@
         </div>
       </div>
 
-      <!-- Daily Target Card -->
+      <!-- GitHub Stats Card -->
       <div class="card github-pulse-card" style="animation-delay:0.6s">
-        <div class="card-label"><div class="card-label-dot"></div>DAILY COMMIT TARGET <span id="ghTargetBadge" class="tag tag-yellow" style="margin-left:auto;font-size:9px">—</span></div>
-        <div id="ghTargetLabel" style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">Analysing commit history…</div>
-        <div style="margin-top:auto">
+        <div class="card-label"><div class="card-label-dot"></div>GITHUB STATS <span id="ghTargetBadge" class="tag tag-yellow" style="margin-left:auto;font-size:9px">—</span></div>
+
+        <!-- Stats grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:10px;padding:14px 16px;text-align:center">
+            <div id="ghStatCommits" style="font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700;color:var(--cyan);line-height:1">—</div>
+            <div style="font-size:10px;color:var(--text-muted);letter-spacing:1.5px;margin-top:6px">TOTAL COMMITS</div>
+          </div>
+          <div style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:10px;padding:14px 16px;text-align:center">
+            <div id="ghStatToday" style="font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700;color:var(--green);line-height:1">—</div>
+            <div style="font-size:10px;color:var(--text-muted);letter-spacing:1.5px;margin-top:6px">TODAY</div>
+          </div>
+        </div>
+
+        <!-- Target message -->
+        <div id="ghTargetLabel" style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:10px">Analysing commit history…</div>
+
+        <!-- Progress bar -->
+        <div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <span style="font-size:10px;color:var(--text-muted);letter-spacing:1px">PROGRESS</span>
+            <span style="font-size:10px;color:var(--text-muted);letter-spacing:1px">DAILY TARGET PROGRESS</span>
           </div>
           <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden">
             <div id="ghTargetBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:4px;transition:width 1.5s ease"></div>

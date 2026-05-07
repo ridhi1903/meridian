@@ -34,8 +34,9 @@ const GitHubPulse = (() => {
     // Restore Ghost Layer state from localStorage
     _isGhostOn = localStorage.getItem(GHOST_KEY) === 'true';
 
-    // Restore paused state from localStorage
-    _isPaused = localStorage.getItem(PAUSED_KEY) === 'true';
+    // Restore paused state — default to PAUSED unless explicitly resumed
+    const savedPause = localStorage.getItem(PAUSED_KEY);
+    _isPaused = savedPause === null ? true : savedPause === 'true';
 
     // Listen for live Ghost Mode toggle events from MERIDIAN.GhostMode
     window.addEventListener('meridian:ghostmode', (e) => {
@@ -134,6 +135,12 @@ const GitHubPulse = (() => {
     // ── Velocity bar ──
     const velBar = document.getElementById('ghVelocityBar');
     if (velBar) velBar.style.width = data.velocityScore + '%';
+
+    // ── GitHub Stats: commit counts ──
+    const statCommits = document.getElementById('ghStatCommits');
+    const statToday   = document.getElementById('ghStatToday');
+    if (statCommits) statCommits.textContent = data.commitCount;
+    if (statToday && data.targets) statToday.textContent = data.targets.actual;
 
     // ── Daily target analysis ──
     const targetLabel  = document.getElementById('ghTargetLabel');
