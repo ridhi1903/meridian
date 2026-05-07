@@ -6,6 +6,7 @@
   <title>MERIDIAN — Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/github-pulse.css">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
@@ -746,6 +747,48 @@
       </div>
     </div>
 
+    <!-- ── ROW 5: GITHUB SYSTEM PULSE ── -->
+    <div class="grid-2" style="margin-bottom:20px">
+      <!-- GitHub Heartbeat Card -->
+      <div class="card github-pulse-card" style="animation-delay:0.55s">
+        <div class="card-label"><div class="card-label-dot" id="ghPulseDot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>SYSTEM PULSE — GITHUB HEARTBEAT</div>
+        <div style="display:flex;align-items:flex-start;gap:16px">
+          <div style="font-size:28px;flex-shrink:0">🐙</div>
+          <div style="flex:1;min-width:0">
+            <div id="ghPulseMsg" class="blur-sensitive" style="font-size:13px;color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Loading…</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+              <span id="ghPulseAuthor" class="blur-sensitive" style="font-size:11px;color:var(--cyan)">—</span>
+              <span style="font-size:11px;color:var(--text-muted)">·</span>
+              <span id="ghPulseTime" style="font-size:11px;color:var(--text-muted);font-family:'Orbitron',sans-serif">—</span>
+            </div>
+            <div style="margin-top:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                <span style="font-size:10px;color:var(--text-muted);letter-spacing:1px">VELOCITY</span>
+                <span id="ghPulseScore" style="font-family:'Orbitron',sans-serif;font-size:13px;color:var(--cyan)">—</span>
+              </div>
+              <div style="height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden">
+                <div id="ghVelocityBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--green));border-radius:3px;transition:width 1.5s ease"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Target Card -->
+      <div class="card github-pulse-card" style="animation-delay:0.6s">
+        <div class="card-label"><div class="card-label-dot"></div>DAILY COMMIT TARGET <span id="ghTargetBadge" class="tag tag-yellow" style="margin-left:auto;font-size:9px">—</span></div>
+        <div id="ghTargetLabel" style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">Analysing commit history…</div>
+        <div style="margin-top:auto">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:10px;color:var(--text-muted);letter-spacing:1px">PROGRESS</span>
+          </div>
+          <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden">
+            <div id="ghTargetBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:4px;transition:width 1.5s ease"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </main>
 
@@ -915,5 +958,6 @@
 </script>
 <script src="js/app.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/github.js"></script>
 </body>
 </html>

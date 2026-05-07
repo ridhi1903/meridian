@@ -1,0 +1,101 @@
+/* ═══════════════════════════════════════════════
+   MERIDIAN — GitHub Pulse Styles
+   github-pulse.css
+   Glassmorphism tile + blur-sensitive utility
+═══════════════════════════════════════════════ */
+
+/* ── GitHub Pulse Card (glowing glassmorphism) ── */
+.github-pulse-card {
+  background: linear-gradient(
+    135deg,
+    rgba(13, 22, 40, 0.85) 0%,
+    rgba(10, 18, 32, 0.95) 100%
+  );
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+
+  /* Glassmorphism */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  /* Glow halo */
+  box-shadow:
+    0 0 30px rgba(0, 212, 255, 0.06),
+    inset 0 0 40px rgba(0, 212, 255, 0.02);
+
+  transition: border-color 0.4s, box-shadow 0.4s;
+}
+
+.github-pulse-card:hover {
+  border-color: rgba(0, 212, 255, 0.35);
+  box-shadow:
+    0 0 50px rgba(0, 212, 255, 0.1),
+    inset 0 0 60px rgba(0, 212, 255, 0.03);
+}
+
+/* Top edge glow line */
+.github-pulse-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 212, 255, 0.4),
+    transparent
+  );
+}
+
+/* Inner shimmer (subtle animated grain) */
+.github-pulse-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(0, 212, 255, 0.02) 40%,
+    transparent 60%
+  );
+  animation: pulse-shimmer 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-shimmer {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+
+/* ── Ghost Layer tint for pulse cards ── */
+.github-pulse-card.ghost-tint {
+  border-color: rgba(124, 58, 237, 0.3);
+  box-shadow:
+    0 0 30px rgba(124, 58, 237, 0.08),
+    inset 0 0 40px rgba(124, 58, 237, 0.03);
+}
+
+.github-pulse-card.ghost-tint::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(124, 58, 237, 0.4),
+    transparent
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   .blur-sensitive — Ghost Layer content blocker
+   Applied dynamically by github.js when Ghost Mode
+   is active. The filter is set via JS, but this class
+   provides the transition and base styling.
+═══════════════════════════════════════════════ */
+.blur-sensitive {
+  transition: filter 0.5s ease, opacity 0.5s ease;
+}
