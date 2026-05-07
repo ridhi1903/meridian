@@ -464,7 +464,7 @@
     <div class="grid-3-1">
       <!-- Task List -->
       <div class="card" style="animation-delay:0.15s">
-        <div class="card-label"><div class="card-label-dot"></div>TODAY'S TASKS <span id="taskCountLabel" style="margin-left:auto;font-size:11px;color:var(--green)">7 / 10 done</span><button onclick="openAddTaskModal()" style="margin-left:12px;padding:4px 12px;border-radius:20px;border:1px solid var(--cyan);background:var(--cyan-dim);color:var(--cyan);font-size:10px;letter-spacing:1px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s" onmouseover="this.style.background='var(--cyan)';this.style.color='#040812'" onmouseout="this.style.background='var(--cyan-dim)';this.style.color='var(--cyan)'">＋ ADD</button></div>
+        <div class="card-label"><div class="card-label-dot"></div>TODAY'S TASKS <span id="taskCountLabel" style="margin-left:auto;font-size:11px;color:var(--green)">3 / 7 done</span><button onclick="openAddTaskModal()" style="margin-left:12px;padding:4px 12px;border-radius:20px;border:1px solid var(--cyan);background:var(--cyan-dim);color:var(--cyan);font-size:10px;letter-spacing:1px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s" onmouseover="this.style.background='var(--cyan)';this.style.color='#040812'" onmouseout="this.style.background='var(--cyan-dim)';this.style.color='var(--cyan)'">＋ ADD</button></div>
         <div class="task-list" id="taskList">
           <div class="task-item done">
             <div class="task-check checked" onclick="toggleTask(this)">✓</div>
@@ -480,8 +480,8 @@
             <span class="task-source">GitHub</span>
             <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
-          <div class="task-item done">
-            <div class="task-check checked" onclick="toggleTask(this)">✓</div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
             <div class="task-text">Review SmartThings SDK docs</div>
             <span class="task-priority tp-medium">MED</span>
             <span class="task-source">Notion</span>
@@ -505,7 +505,7 @@
             <div class="task-check" onclick="toggleTask(this)"></div>
             <div class="task-text">Submit Friday deliverable — deadline detected</div>
             <span class="task-priority tp-high">HIGH</span>
-            <span class="task-source">WhatsApp</span>
+            <span class="task-source">Gmail</span>
             <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
           <div class="task-item">
@@ -519,7 +519,7 @@
         <div style="margin-top:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
             <span style="font-size:11px;color:var(--text-muted)">Overall Progress</span>
-            <span style="font-size:11px;color:var(--green)" id="progressPct">70%</span>
+            <span style="font-size:11px;color:var(--green)" id="progressPct">43%</span>
           </div>
           <div style="height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden">
             <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--green));border-radius:3px;transition:width 1.5s ease"></div>
@@ -581,8 +581,8 @@
             </div>
           </div>
           <div>
-            <div style="font-size:12px;color:var(--text-primary);font-weight:600">Great progress!</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px" id="tasksLeftLabel">3 tasks left today</div>
+            <div style="font-size:12px;color:var(--text-primary);font-weight:600">Keep going!</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px" id="tasksLeftLabel">4 tasks left today</div>
             <div style="font-size:11px;color:var(--cyan);margin-top:6px">↑ +12% vs yesterday</div>
           </div>
         </div>
@@ -668,10 +668,10 @@
             <div class="app-card-status ok">● Connected</div>
             <div class="app-card-count">4 pages</div>
           </div>
-          <div class="app-card" onclick="showToast('WhatsApp: 1 deadline detected')">
-            <div class="app-card-icon">📱</div>
-            <div class="app-card-name">WhatsApp</div>
-            <div class="app-card-status warn">● 1 deadline</div>
+          <div class="app-card" onclick="showToast('Gmail: 2 deadlines detected in inbox')">
+            <div class="app-card-icon">📧</div>
+            <div class="app-card-name">Gmail</div>
+            <div class="app-card-status warn">● 2 deadlines</div>
             <div class="app-card-count">Scan & Sync</div>
           </div>
           <div class="app-card" onclick="showToast('Google Calendar: 3 events today')">
@@ -688,12 +688,12 @@
           </div>
         </div>
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">SCAN & SYNC — Detected from WhatsApp</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">SCAN &amp; SYNC — Detected from Gmail</div>
           <div style="background:var(--bg-card2);border:1px solid var(--yellow);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
             <span style="font-size:16px">⚠️</span>
             <div style="flex:1">
-              <div style="font-size:12px;color:var(--text-primary)">"Submit by Friday" — deadline detected</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">From: Team Chat · 11:32 AM</div>
+              <div style="font-size:12px;color:var(--text-primary)">“Submit by Friday” — deadline detected</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">From: Gmail Inbox · 11:32 AM</div>
             </div>
             <button class="btn btn-cyan" style="padding:5px 10px;font-size:10px" onclick="showToast('✓ Added to Calendar — Friday deadline')">Add to Calendar</button>
           </div>
@@ -890,9 +890,8 @@
           <option>GitHub</option>
           <option>Notion</option>
           <option>Calendar</option>
-          <option>Slack</option>
-          <option>WhatsApp</option>
-          <option>Email</option>
+          <option>Gmail</option>
+          <option>Outlook</option>
           <option>Jira</option>
           <option>Other</option>
         </select>

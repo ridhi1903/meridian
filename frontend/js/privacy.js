@@ -206,7 +206,7 @@ const Privacy = (() => {
     // Log permission change
     const labels = {
       doc: 'Document content reading (Work Life)',
-      msg: 'Message scan / task detection (Work Life)',
+      msg: 'Email scan / task detection (Work Life)',
       loc: 'Location access (Personal Life / Smart Home)',
     };
     _appendAuditStore({
@@ -262,9 +262,9 @@ const Privacy = (() => {
   const _workEvents = [
     { type:'allow', action:'VS Code — file open event',            detail:'auth.service.ts · Work Life context tracker', tag:'WORK', tagClass:'info' },
     { type:'allow', action:'Notion — page scan for task keywords', detail:'Sprint board · "due this week" → Calendar',   tag:'SCAN & SYNC', tagClass:'info' },
-    { type:'warn',  action:'WhatsApp — deadline scan triggered',   detail:'Work Life · "deliver by Monday" detected',    tag:'WORK', tagClass:'info' },
+    { type:'warn',  action:'Gmail — email deadline scan triggered',   detail:'Work Life · "deliver by Monday" detected',    tag:'WORK', tagClass:'info' },
     { type:'allow', action:'GitHub — PR event logged',             detail:'PR #48 opened · Work Life tracker',           tag:'ALLOWED', tagClass:'allowed' },
-    { type:'allow', action:'Calendar — event auto-created',        detail:'"Monday deadline" added from WhatsApp scan',  tag:'WORK', tagClass:'info' },
+    { type:'allow', action:'Calendar — event auto-created',        detail:'"Monday deadline" added from Gmail scan',     tag:'WORK', tagClass:'info' },
     { type:'allow', action:'App time tracked — Chrome 35m',        detail:'Work Life app usage summary updated',         tag:'ALLOWED', tagClass:'allowed' },
   ];
 

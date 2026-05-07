@@ -25,11 +25,15 @@
 ───────────────────────────────────────────── */
 const WORK_KEYS = {
   TASKS     : 'meridian_tasks',
+  TASK_VER  : 'meridian_tasks_ver',
   AWAY_START: 'meridian_away_start',
   GHOST     : 'meridian_ghost_mode',
   PERM_MSG  : 'meridian_perm_msg',
   PERM_DOC  : 'meridian_perm_doc',
 };
+
+/* Task state version — bump this string whenever default task states change in HTML */
+const TASK_STATE_VERSION = 'v2';
 
 /* ─────────────────────────────────────────────
    INIT
@@ -125,6 +129,12 @@ const WorkResume = (() => {
   }
 
   function _restoreTaskStates() {
+    /* If the stored version doesn't match, wipe stale cache so HTML defaults show */
+    if (localStorage.getItem(WORK_KEYS.TASK_VER) !== TASK_STATE_VERSION) {
+      localStorage.removeItem(WORK_KEYS.TASKS);
+      localStorage.setItem(WORK_KEYS.TASK_VER, TASK_STATE_VERSION);
+    }
+
     try {
       const raw = localStorage.getItem(WORK_KEYS.TASKS);
       if (!raw) return;
@@ -167,7 +177,7 @@ const WorkResume = (() => {
       { icon: '📊', label: 'Spreadsheets',   value: '2 tables',   color: 'yellow', pct: 40 },
       { icon: '🔀', label: 'Git Commits',    value: '5 commits',  color: 'purple', pct: 70 },
       { icon: '🔍', label: 'PRs Reviewed',   value: '2 PRs',      color: 'cyan',   pct: 50 },
-      { icon: '💬', label: 'Slack Messages', value: '34 sent',    color: 'yellow', pct: 34 },
+      { icon: '�', label: 'Emails Sent',    value: '12 emails',  color: 'yellow', pct: 34 },
     ];
 
     const gradMap = {
@@ -370,6 +380,46 @@ const WorkResume = (() => {
         .cal-modal-actions { display:flex; gap:10px; margin-top:20px; }
         .cal-modal-actions .btn { flex:1; justify-content:center; }
         #calDelBtn { display:none; flex:0 0 auto; }
+        .cal-repeat-wrap { display:flex; gap:8px; }
+        .cal-repeat-wrap select { flex:1; }
+        #calEvCustomDays { width:80px; flex-shrink:0; display:none; }
+        .cal-repeat-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px;
+          border-radius:10px; font-size:9px; letter-spacing:1px; border:1px solid var(--purple);
+          color:var(--purple); background:rgba(167,139,250,0.08); margin-left:6px; vertical-align:middle; }
+        #calOccurrencesRow { display:none; }
+        #calClearModal { position:fixed; inset:0; background:rgba(4,8,18,0.85); backdrop-filter:blur(6px);
+          display:flex; align-items:center; justify-content:center; z-index:9999;
+          opacity:0; pointer-events:none; transition:opacity 0.2s; }
+        #calClearModal.open { opacity:1; pointer-events:all; }
+        #calClearBox { background:#0d1628; border:1px solid var(--red); border-radius:16px;
+          padding:28px 24px; max-width:380px; width:90%; box-shadow:0 0 40px rgba(255,71,87,0.15); }
+        #calClearBox h3 { font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:3px;
+          color:var(--red); margin:0 0 6px; }
+        #calClearBox p { font-size:12px; color:var(--text-muted); margin:0 0 20px; line-height:1.6; }
+        .clear-scope-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+        .clear-scope-btn { background:#0a0f1e; border:1px solid #1a2d4a; border-radius:10px;
+          padding:12px 10px; cursor:pointer; text-align:center; transition:all 0.2s;
+          font-family:'Inter',sans-serif; }
+        .clear-scope-btn:hover { border-color:var(--red); background:rgba(255,71,87,0.07); }
+        .clear-scope-btn .csb-icon { font-size:20px; display:block; margin-bottom:6px; }
+        .clear-scope-btn .csb-label { font-size:11px; letter-spacing:1px; color:var(--text-primary); display:block; }
+        .clear-scope-btn .csb-sub { font-size:10px; color:var(--text-muted); display:block; margin-top:2px; }
+        .clear-scope-btn.full-cal { grid-column:1/-1; border-color:#2a1a1a; }
+        .clear-scope-btn.full-cal:hover { border-color:var(--red); }
+        #calClearConfirmStep { display:none; margin-bottom:20px; }
+        #calClearConfirmStep p { color:var(--red); font-size:12px; font-weight:600; margin:0 0 12px; }
+        .clear-confirm-actions { display:flex; gap:10px; }
+        .clear-cancel-btn { flex:1; background:transparent; border:1px solid #1a2d4a; color:var(--text-muted);
+          border-radius:8px; padding:9px; cursor:pointer; font-size:12px; font-family:'Inter',sans-serif;
+          transition:all 0.2s; }
+        .clear-cancel-btn:hover { border-color:var(--text-muted); color:var(--text-primary); }
+        .clear-confirm-yes { flex:1; background:rgba(255,71,87,0.12); border:1px solid var(--red);
+          color:var(--red); border-radius:8px; padding:9px; cursor:pointer; font-size:12px;
+          font-family:'Orbitron',sans-serif; letter-spacing:1px; transition:all 0.2s; }
+        .clear-confirm-yes:hover { background:var(--red); color:#fff; }
+        .cal-occurrences-inner { display:flex; align-items:center; gap:10px; }
+        .cal-occurrences-inner input { width:80px; flex-shrink:0; }
+        .cal-occurrences-inner span { font-size:12px; color:var(--text-muted); }
       `;
       document.head.appendChild(st);
     }
@@ -408,6 +458,30 @@ const WorkResume = (() => {
               <option value="purple">🟣 Purple — Focus / Personal</option>
             </select>
           </div>
+          <div class="cal-field">
+            <label>REPEAT</label>
+            <div class="cal-repeat-wrap">
+              <select id="calEvRepeat" onchange="Cal.onRepeatChange()">
+                <option value="none">❌ No Repeat</option>
+                <option value="daily">🔄 Daily</option>
+                <option value="weekly">🗓 Weekly (same day every week)</option>
+                <option value="biweekly">🗓 Every 2 Weeks</option>
+                <option value="monthly">📅 Monthly (same date)</option>
+                <option value="yearly">🌟 Yearly (same date)</option>
+                <option value="custom">⚙️ Every X Days</option>
+              </select>
+              <input type="number" id="calEvCustomDays" min="2" max="365" value="7"
+                     placeholder="Days" title="Repeat every N days"/>
+            </div>
+            <div id="calRepeatHint" style="font-size:10px;color:var(--purple);margin-top:5px;display:none"></div>
+          </div>
+          <div class="cal-field" id="calOccurrencesRow">
+            <label>OCCURRENCES</label>
+            <div class="cal-occurrences-inner">
+              <input type="number" id="calEvOccurrences" min="1" max="365" value="12" placeholder="e.g. 12" oninput="Cal._updateRepeatHint()"/>
+              <span id="calOccurrencesUnit">times</span>
+            </div>
+          </div>
           <div class="cal-modal-actions">
             <button class="btn btn-ghost" onclick="Cal.closeModal()">Cancel</button>
             <button id="calDelBtn" class="btn" style="background:var(--red-dim);border-color:var(--red);color:var(--red)" onclick="Cal.deleteEvent()">🗑 Delete</button>
@@ -416,6 +490,56 @@ const WorkResume = (() => {
         </div>`;
       document.body.appendChild(modal);
       modal.addEventListener('click', e => { if (e.target === modal) Cal.closeModal(); });
+    }
+
+    /* ── CLEAR MODAL ── */
+    if (!document.getElementById('calClearModal')) {
+      const cm = document.createElement('div');
+      cm.id = 'calClearModal';
+      cm.innerHTML = `
+        <div id="calClearBox">
+          <h3>🗑 CLEAR EVENTS</h3>
+          <p>Choose a time range to remove events from your calendar.</p>
+          <div id="calClearSelectStep">
+            <div class="clear-scope-grid">
+              <button class="clear-scope-btn" onclick="Cal._confirmClearScope('2days')">
+                <span class="csb-icon">📆</span>
+                <span class="csb-label">NEXT 2 DAYS</span>
+                <span class="csb-sub">Selected date &amp; the day after</span>
+              </button>
+              <button class="clear-scope-btn" onclick="Cal._confirmClearScope('week')">
+                <span class="csb-icon">🗓</span>
+                <span class="csb-label">THIS WEEK</span>
+                <span class="csb-sub">Sun → Sat of selected date's week</span>
+              </button>
+              <button class="clear-scope-btn" onclick="Cal._confirmClearScope('month')">
+                <span class="csb-icon">📅</span>
+                <span class="csb-label">THIS MONTH</span>
+                <span class="csb-sub" id="clearLabelMonth"></span>
+              </button>
+              <button class="clear-scope-btn" onclick="Cal._confirmClearScope('year')">
+                <span class="csb-icon">🗂</span>
+                <span class="csb-label">THIS YEAR</span>
+                <span class="csb-sub" id="clearLabelYear"></span>
+              </button>
+              <button class="clear-scope-btn full-cal" onclick="Cal._confirmClearScope('all')">
+                <span class="csb-icon">⚠️</span>
+                <span class="csb-label">FULL CALENDAR</span>
+                <span class="csb-sub">Delete every event — cannot be undone</span>
+              </button>
+            </div>
+          </div>
+          <div id="calClearConfirmStep">
+            <p id="calClearConfirmMsg"></p>
+            <div class="clear-confirm-actions">
+              <button class="clear-cancel-btn" onclick="Cal._backToClearSelect()">← Back</button>
+              <button class="clear-confirm-yes" onclick="Cal._executeClear()">CONFIRM DELETE</button>
+            </div>
+          </div>
+          <button class="clear-cancel-btn" style="width:100%;margin-top:4px" onclick="Cal.closeClearModal()">Cancel</button>
+        </div>`;
+      document.body.appendChild(cm);
+      cm.addEventListener('click', e => { if (e.target === cm) Cal.closeClearModal(); });
     }
 
     card.innerHTML = `
@@ -460,6 +584,7 @@ const WorkResume = (() => {
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;align-items:center">
         <span id="calEventCount" style="font-size:11px;color:var(--text-muted)"></span>
         <span style="margin-left:auto;font-size:10px;color:#2a3d55">Click a day to view · Click an event to edit</span>
+        <button onclick="Cal.openClearModal()" style="background:rgba(255,71,87,0.08);border:1px solid var(--red);color:var(--red);border-radius:7px;padding:4px 12px;cursor:pointer;font-size:10px;letter-spacing:1px;font-family:'Orbitron',sans-serif;transition:all 0.2s" onmouseover="this.style.background='rgba(255,71,87,0.18)'" onmouseout="this.style.background='rgba(255,71,87,0.08)'">🗑 CLEAR</button>
       </div>`;
 
     // Insert after work output card, before sessions row
@@ -579,13 +704,16 @@ const WorkResume = (() => {
             const col = colorMap[c] || '#00d4ff';
             const tag = tagMap[c] || 'EVENT';
             const desc = ev.desc ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5">${ev.desc}</div>` : '';
+            const repeatLabels = { daily:'Daily', weekly:'Weekly', biweekly:'Bi-weekly', monthly:'Monthly', yearly:'Yearly', custom:'Custom' };
+            const repeatBadge  = ev.repeat
+              ? `<span class="cal-repeat-badge">🔁 ${repeatLabels[ev.repeat] || ev.repeat}</span>` : '';
             return `
               <div class="cdp-ev-card" style="border-color:${col};color:${col}"
                    onclick="Cal.openEdit('${dateKey}','${ev.id}')">
                 <div class="cdp-ev-card-time">${ev.time}</div>
                 <div class="cdp-ev-card-title" style="color:var(--text-primary)">${ev.label}</div>
                 ${desc}
-                <span class="cdp-ev-card-tag" style="color:${col};border-color:${col};background:${col}18">${tag}</span>
+                <span class="cdp-ev-card-tag" style="color:${col};border-color:${col};background:${col}18">${tag}</span>${repeatBadge}
                 <span class="cdp-ev-card-edit">✎ edit</span>
               </div>`;
           }).join('');
@@ -610,6 +738,50 @@ const WorkResume = (() => {
         Cal.openAdd(dk || _ymd(new Date()));
       },
 
+      /* ── REPEAT CHANGE HANDLER ── */
+      onRepeatChange() {
+        const val      = document.getElementById('calEvRepeat').value;
+        const custEl   = document.getElementById('calEvCustomDays');
+        const occRow   = document.getElementById('calOccurrencesRow');
+        const occInput = document.getElementById('calEvOccurrences');
+        const occUnit  = document.getElementById('calOccurrencesUnit');
+        const hintEl   = document.getElementById('calRepeatHint');
+
+        custEl.style.display = val === 'custom' ? 'block' : 'none';
+        occRow.style.display = val === 'none'   ? 'none'  : 'block';
+
+        /* Smart defaults + unit labels per frequency */
+        const defaults = { daily:30, weekly:12, biweekly:12, monthly:12, yearly:3, custom:10 };
+        const units    = {
+          daily:'days', weekly:'weeks', biweekly:'occurrences',
+          monthly:'months', yearly:'years', custom:'occurrences',
+        };
+        if (val !== 'none') {
+          occInput.value = defaults[val] ?? 12;
+          occUnit.textContent = units[val] || 'times';
+        }
+
+        Cal._updateRepeatHint();
+      },
+
+      /* ── UPDATE HINT (called on repeat change or occurrences change) ── */
+      _updateRepeatHint() {
+        const val  = document.getElementById('calEvRepeat').value;
+        const occ  = parseInt(document.getElementById('calEvOccurrences').value) || 1;
+        const hintEl = document.getElementById('calRepeatHint');
+        const customN = parseInt(document.getElementById('calEvCustomDays').value) || 7;
+        const hints = {
+          daily:    `Creates ${occ} daily events from the start date`,
+          weekly:   `Creates ${occ} weekly events (same weekday)`,
+          biweekly: `Creates ${occ} events, every 2 weeks`,
+          monthly:  `Creates ${occ} monthly events (same date)`,
+          yearly:   `Creates ${occ} yearly events (same date)`,
+          custom:   `Creates ${occ} events, every ${customN} days`,
+        };
+        hintEl.textContent  = hints[val] || '';
+        hintEl.style.display = val === 'none' ? 'none' : 'block';
+      },
+
       /* ── OPEN ADD MODAL ── */
       openAdd(dateKey) {
         editingEvent = null;
@@ -619,11 +791,16 @@ const WorkResume = (() => {
 
         document.getElementById('calModalTitle').textContent   = 'ADD EVENT';
         document.getElementById('calModalDateSub').textContent = nice;
-        document.getElementById('calEvDate').value  = dateKey || _ymd(new Date());
-        document.getElementById('calEvTime').value  = '09:00';
-        document.getElementById('calEvLabel').value = '';
-        document.getElementById('calEvDesc').value  = '';
-        document.getElementById('calEvColor').value = 'cyan';
+        document.getElementById('calEvDate').value   = dateKey || _ymd(new Date());
+        document.getElementById('calEvTime').value   = '09:00';
+        document.getElementById('calEvLabel').value  = '';
+        document.getElementById('calEvDesc').value   = '';
+        document.getElementById('calEvColor').value  = 'cyan';
+        document.getElementById('calEvRepeat').value       = 'none';
+        document.getElementById('calEvOccurrences').value  = '12';
+        document.getElementById('calEvCustomDays').style.display   = 'none';
+        document.getElementById('calRepeatHint').style.display     = 'none';
+        document.getElementById('calOccurrencesRow').style.display = 'none';
         document.getElementById('calDelBtn').style.display = 'none';
         document.getElementById('calModal').classList.add('open');
         setTimeout(() => document.getElementById('calEvLabel').focus(), 50);
@@ -642,11 +819,15 @@ const WorkResume = (() => {
 
         document.getElementById('calModalTitle').textContent   = 'EDIT EVENT';
         document.getElementById('calModalDateSub').textContent = nice;
-        document.getElementById('calEvDate').value  = dateKey;
-        document.getElementById('calEvTime').value  = ev.time;
-        document.getElementById('calEvLabel').value = ev.label;
-        document.getElementById('calEvDesc').value  = ev.desc || '';
-        document.getElementById('calEvColor').value = ev.color;
+        document.getElementById('calEvDate').value   = dateKey;
+        document.getElementById('calEvTime').value   = ev.time;
+        document.getElementById('calEvLabel').value  = ev.label;
+        document.getElementById('calEvDesc').value   = ev.desc || '';
+        document.getElementById('calEvColor').value  = ev.color;
+        document.getElementById('calEvRepeat').value       = 'none'; // editing doesn't re-apply repeat
+        document.getElementById('calEvCustomDays').style.display   = 'none';
+        document.getElementById('calRepeatHint').style.display     = 'none';
+        document.getElementById('calOccurrencesRow').style.display = 'none';
         document.getElementById('calDelBtn').style.display = 'block';
         document.getElementById('calModal').classList.add('open');
         setTimeout(() => document.getElementById('calEvLabel').focus(), 50);
@@ -654,11 +835,14 @@ const WorkResume = (() => {
 
       /* ── SAVE EVENT ── */
       saveEvent() {
-        const dateKey = document.getElementById('calEvDate').value;
-        const time    = document.getElementById('calEvTime').value;
-        const label   = document.getElementById('calEvLabel').value.trim();
-        const desc    = document.getElementById('calEvDesc').value.trim();
-        const color   = document.getElementById('calEvColor').value;
+        const dateKey   = document.getElementById('calEvDate').value;
+        const time      = document.getElementById('calEvTime').value;
+        const label     = document.getElementById('calEvLabel').value.trim();
+        const desc      = document.getElementById('calEvDesc').value.trim();
+        const color     = document.getElementById('calEvColor').value;
+        const repeat      = document.getElementById('calEvRepeat').value;
+        const customN     = parseInt(document.getElementById('calEvCustomDays').value) || 7;
+        const occurrences = Math.max(1, Math.min(365, parseInt(document.getElementById('calEvOccurrences').value) || 12));
 
         if (!dateKey || !label) {
           if (typeof showToast === 'function') showToast('⚠️ Please fill in date and title');
@@ -666,32 +850,78 @@ const WorkResume = (() => {
         }
 
         const events = _loadEvents();
+        const safeLabel = _sanitize(label);
+        const safeDesc  = _sanitize(desc);
 
         if (editingEvent) {
+          /* Editing — just update the single occurrence, no repeat */
           const oldKey = editingEvent.dateKey;
           if (events[oldKey]) {
             events[oldKey] = events[oldKey].filter(e => e.id !== editingEvent.eventId);
             if (!events[oldKey].length) delete events[oldKey];
           }
           if (!events[dateKey]) events[dateKey] = [];
-          events[dateKey].push({ id: editingEvent.eventId, time, label: _sanitize(label), desc: _sanitize(desc), color });
+          events[dateKey].push({ id: editingEvent.eventId, time, label: safeLabel, desc: safeDesc, color });
           events[dateKey].sort((a,b) => a.time.localeCompare(b.time));
-          // Update active panel date if date changed
           if (activeDateKey === editingEvent.dateKey) activeDateKey = dateKey;
           if (typeof showToast === 'function') showToast('✓ Event updated');
         } else {
-          if (!events[dateKey]) events[dateKey] = [];
-          const id = 'ev_' + Date.now();
-          events[dateKey].push({ id, time, label: _sanitize(label), desc: _sanitize(desc), color });
-          events[dateKey].sort((a,b) => a.time.localeCompare(b.time));
+          /* New event — generate occurrences based on repeat setting */
+          const baseDate = new Date(dateKey + 'T00:00:00');
+          const seriesId = 'ev_' + Date.now();
+          const dates = [baseDate];
+
+          if (repeat === 'daily') {
+            for (let i = 1; i < occurrences; i++) {
+              const d = new Date(baseDate); d.setDate(d.getDate() + i); dates.push(d);
+            }
+          } else if (repeat === 'weekly') {
+            for (let i = 1; i <= occurrences; i++) {
+              const d = new Date(baseDate); d.setDate(d.getDate() + i * 7); dates.push(d);
+            }
+          } else if (repeat === 'biweekly') {
+            for (let i = 1; i <= occurrences; i++) {
+              const d = new Date(baseDate); d.setDate(d.getDate() + i * 14); dates.push(d);
+            }
+          } else if (repeat === 'monthly') {
+            for (let i = 1; i <= occurrences; i++) {
+              const d = new Date(baseDate); d.setMonth(d.getMonth() + i); dates.push(d);
+            }
+          } else if (repeat === 'yearly') {
+            for (let i = 1; i <= occurrences; i++) {
+              const d = new Date(baseDate); d.setFullYear(d.getFullYear() + i); dates.push(d);
+            }
+          } else if (repeat === 'custom') {
+            for (let i = 1; i <= occurrences; i++) {
+              const d = new Date(baseDate); d.setDate(d.getDate() + i * customN); dates.push(d);
+            }
+          }
+
+          dates.forEach((d, idx) => {
+            const key = _ymd(d);
+            if (!events[key]) events[key] = [];
+            events[key].push({
+              id:    idx === 0 ? seriesId : seriesId + '_' + idx,
+              time, label: safeLabel, desc: safeDesc, color,
+              repeat: repeat !== 'none' ? repeat : undefined,
+            });
+            events[key].sort((a,b) => a.time.localeCompare(b.time));
+          });
+
           activeDateKey = dateKey;
-          if (typeof showToast === 'function') showToast('✓ Event added to calendar');
+          const repeatLabels = {
+            daily:'Daily', weekly:'Weekly', biweekly:'Every 2 weeks',
+            monthly:'Monthly', yearly:'Yearly', custom:`Every ${customN} days`, none:''
+          };
+          const toastMsg = repeat === 'none'
+            ? '✓ Event added to calendar'
+            : `✓ ${dates.length} occurrences added — ${repeatLabels[repeat]}`;
+          if (typeof showToast === 'function') showToast(toastMsg);
         }
 
         _saveEvents(events);
         Cal.closeModal();
         Cal.render();
-        // Re-open panel on the saved date
         Cal.openDay(activeDateKey || dateKey);
       },
 
@@ -715,6 +945,95 @@ const WorkResume = (() => {
       closeModal() {
         document.getElementById('calModal').classList.remove('open');
         editingEvent = null;
+      },
+
+      /* ── CLEAR EVENTS ── */
+      openClearModal() {
+        const now = new Date();
+        const monthNames = ['January','February','March','April','May','June',
+          'July','August','September','October','November','December'];
+        const ml = document.getElementById('clearLabelMonth');
+        const yl = document.getElementById('clearLabelYear');
+        if (ml) ml.textContent = monthNames[viewMonth] + ' ' + viewYear;
+        if (yl) yl.textContent = 'All of ' + viewYear;
+        // Reset to select step
+        Cal._backToClearSelect();
+        document.getElementById('calClearModal').classList.add('open');
+      },
+
+      closeClearModal() {
+        document.getElementById('calClearModal').classList.remove('open');
+        Cal._clearPendingScope = null;
+      },
+
+      _clearPendingScope: null,
+
+      _confirmClearScope(scope) {
+        Cal._clearPendingScope = scope;
+        const refDate  = activeDateKey ? new Date(activeDateKey + 'T00:00:00') : new Date();
+        const tom      = new Date(refDate); tom.setDate(tom.getDate() + 1);
+        const monthNames = ['January','February','March','April','May','June',
+          'July','August','September','October','November','December'];
+
+        // Week start (Sunday) from refDate
+        const sun = new Date(refDate); sun.setDate(sun.getDate() - sun.getDay());
+        const sat = new Date(sun); sat.setDate(sat.getDate() + 6);
+        const fmtShort = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+
+        const msgs = {
+          '2days':  `Delete all events on <b>${refDate.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</b> and <b>${tom.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</b>?`,
+          'week':   `Delete all events from <b>${fmtShort(sun)}</b> to <b>${fmtShort(sat)}</b> (Sun – Sat)?`,
+          'month':  `Delete all events in <b>${monthNames[viewMonth]} ${viewYear}</b>?`,
+          'year':   `Delete all events in the entire year <b>${viewYear}</b>?`,
+          'all':    `⚠️ Delete <b>EVERY</b> event in the full calendar? This cannot be undone.`,
+        };
+
+        document.getElementById('calClearConfirmMsg').innerHTML = msgs[scope] || 'Delete these events?';
+        document.getElementById('calClearSelectStep').style.display  = 'none';
+        document.getElementById('calClearConfirmStep').style.display = 'block';
+      },
+
+      _backToClearSelect() {
+        document.getElementById('calClearSelectStep').style.display  = 'block';
+        document.getElementById('calClearConfirmStep').style.display = 'none';
+        Cal._clearPendingScope = null;
+      },
+
+      _executeClear() {
+        const scope  = Cal._clearPendingScope;
+        if (!scope) return;
+        const events   = _loadEvents();
+        // Use selected calendar date as reference; fall back to today
+        const refDate  = activeDateKey ? new Date(activeDateKey + 'T00:00:00') : new Date();
+        refDate.setHours(0,0,0,0);
+
+        if (scope === 'all') {
+          Object.keys(events).forEach(k => delete events[k]);
+        } else if (scope === '2days') {
+          const tom = new Date(refDate); tom.setDate(tom.getDate() + 1);
+          [_ymd(refDate), _ymd(tom)].forEach(k => delete events[k]);
+        } else if (scope === 'week') {
+          const sun = new Date(refDate);
+          sun.setDate(sun.getDate() - sun.getDay());
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(sun); d.setDate(d.getDate() + i);
+            delete events[_ymd(d)];
+          }
+        } else if (scope === 'month') {
+          const prefix = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-`;
+          Object.keys(events).forEach(k => { if (k.startsWith(prefix)) delete events[k]; });
+        } else if (scope === 'year') {
+          const prefix = `${viewYear}-`;
+          Object.keys(events).forEach(k => { if (k.startsWith(prefix)) delete events[k]; });
+        }
+
+        _saveEvents(events);
+        Cal.closeClearModal();
+        Cal.render();
+        if (activeDateKey) Cal.renderPanel(activeDateKey);
+
+        const labels = { '2days':'2-day', week:'week', month:'month', year:'year', all:'full calendar' };
+        if (typeof showToast === 'function') showToast(`🗑 Cleared all events for ${labels[scope]}`);
       },
 
       prevMonth() { if (viewMonth === 0) { viewMonth=11; viewYear--; } else viewMonth--; Cal.render(); },
@@ -782,9 +1101,9 @@ const WorkResume = (() => {
     if (!scanContainer) return;
 
     const detected = [
-      { source:'Team Chat · 11:32 AM',  label:'"Submit by Friday" — deadline detected',      severity:'yellow', addedToCalendar: false },
-      { source:'WhatsApp · 09:15 AM',   label:'"Review PR before EOD" — task detected',       severity:'cyan',   addedToCalendar: false },
-      { source:'Slack · #dev-team · 10:47 AM', label:'"Sprint planning at 2 PM today"',       severity:'purple', addedToCalendar: true  },
+      { source:'Gmail · Inbox · 11:32 AM',           label:'"Submit by Friday" — deadline detected',       severity:'yellow', addedToCalendar: false },
+      { source:'Gmail · Inbox · 09:15 AM',           label:'"Review PR before EOD" — task detected',       severity:'cyan',   addedToCalendar: false },
+      { source:'Gmail · Team thread · 10:47 AM',     label:'"Sprint planning at 2 PM today"',               severity:'purple', addedToCalendar: true  },
     ];
 
     const scanHtml = `

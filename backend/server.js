@@ -51,7 +51,7 @@ app.get('/api/tasks', (_req, res) => {
     { id:3, text:'Review SmartThings SDK docs',           done:true,  priority:'MEDIUM', source:'Notion'   },
     { id:4, text:'Stand-up call with team',               done:true,  priority:'LOW',    source:'Calendar' },
     { id:5, text:'Write unit tests for refresh token',    done:false, priority:'HIGH',   source:'VS Code'  },
-    { id:6, text:'Submit Friday deliverable',             done:false, priority:'HIGH',   source:'WhatsApp' },
+    { id:6, text:'Submit Friday deliverable',             done:false, priority:'HIGH',   source:'Gmail'    },
     { id:7, text:'Update Notion sprint board',            done:false, priority:'LOW',    source:'Notion'   },
   ]);
 });
