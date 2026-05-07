@@ -198,6 +198,30 @@
     .tp-medium { background:var(--yellow-dim); color:var(--yellow); border-color:var(--yellow); }
     .tp-low    { background:var(--green-dim);  color:var(--green);  border-color:var(--green); }
     .task-source { font-size:10px; color:var(--text-muted); flex-shrink:0; }
+    .task-del { margin-left:4px; font-size:14px; color:var(--text-muted); cursor:pointer; opacity:0; transition:opacity 0.15s; line-height:1; }
+    .task-item:hover .task-del { opacity:1; }
+    .task-del:hover { color:var(--red); }
+
+    /* ── ADD TASK MODAL ── */
+    .atm-overlay { position:fixed; inset:0; background:rgba(4,8,18,0.85); z-index:9000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; backdrop-filter:blur(4px); }
+    .atm-overlay.open { opacity:1; pointer-events:all; }
+    .atm-box { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:28px 28px 24px; width:420px; max-width:94vw; box-shadow:0 20px 60px rgba(0,0,0,0.7); transform:translateY(16px) scale(0.97); transition:transform 0.2s; }
+    .atm-overlay.open .atm-box { transform:translateY(0) scale(1); }
+    .atm-title { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; letter-spacing:3px; color:var(--cyan); margin-bottom:4px; }
+    .atm-sub { font-size:11px; color:var(--text-muted); margin-bottom:22px; }
+    .atm-field { margin-bottom:16px; }
+    .atm-field label { display:block; font-size:10px; letter-spacing:2px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; }
+    .atm-field input, .atm-field select { width:100%; padding:10px 12px; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:'Inter',sans-serif; font-size:13px; outline:none; transition:border-color 0.2s; }
+    .atm-field input:focus, .atm-field select:focus { border-color:var(--cyan); }
+    .atm-field select option { background:#0d1628; }
+    .atm-row { display:flex; gap:12px; }
+    .atm-row .atm-field { flex:1; }
+    .atm-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+    .atm-btn { padding:9px 20px; border-radius:8px; font-size:12px; letter-spacing:1px; cursor:pointer; border:1px solid; font-family:'Inter',sans-serif; transition:all 0.2s; }
+    .atm-btn-cancel { background:transparent; border-color:var(--border); color:var(--text-muted); }
+    .atm-btn-cancel:hover { border-color:var(--text-muted); color:var(--text-primary); }
+    .atm-btn-add { background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan); }
+    .atm-btn-add:hover { background:var(--cyan); color:#040812; box-shadow:0 4px 20px rgba(0,212,255,0.3); }
 
     /* ── CONNECTED APPS ── */
     .apps-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
@@ -440,49 +464,56 @@
     <div class="grid-3-1">
       <!-- Task List -->
       <div class="card" style="animation-delay:0.15s">
-        <div class="card-label"><div class="card-label-dot"></div>TODAY'S TASKS <span style="margin-left:auto;font-size:11px;color:var(--green)">7 / 10 done</span></div>
+        <div class="card-label"><div class="card-label-dot"></div>TODAY'S TASKS <span id="taskCountLabel" style="margin-left:auto;font-size:11px;color:var(--green)">7 / 10 done</span><button onclick="openAddTaskModal()" style="margin-left:12px;padding:4px 12px;border-radius:20px;border:1px solid var(--cyan);background:var(--cyan-dim);color:var(--cyan);font-size:10px;letter-spacing:1px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s" onmouseover="this.style.background='var(--cyan)';this.style.color='#040812'" onmouseout="this.style.background='var(--cyan-dim)';this.style.color='var(--cyan)'">＋ ADD</button></div>
         <div class="task-list" id="taskList">
           <div class="task-item done">
             <div class="task-check checked" onclick="toggleTask(this)">✓</div>
             <div class="task-text">Fix JWT token validation edge case</div>
             <span class="task-priority tp-high">HIGH</span>
             <span class="task-source">VS Code</span>
+            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
           <div class="task-item done">
             <div class="task-check checked" onclick="toggleTask(this)">✓</div>
             <div class="task-text">Push PR #47 — feature/knox-auth</div>
             <span class="task-priority tp-high">HIGH</span>
             <span class="task-source">GitHub</span>
+            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
           <div class="task-item done">
             <div class="task-check checked" onclick="toggleTask(this)">✓</div>
             <div class="task-text">Review SmartThings SDK docs</div>
             <span class="task-priority tp-medium">MED</span>
             <span class="task-source">Notion</span>
+            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
           <div class="task-item done">
             <div class="task-check checked" onclick="toggleTask(this)">✓</div>
             <div class="task-text">Stand-up call with team</div>
             <span class="task-priority tp-low">LOW</span>
             <span class="task-source">Calendar</span>
+            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
           <div class="task-item">
             <div class="task-check" onclick="toggleTask(this)"></div>
             <div class="task-text">Write unit tests for refresh token</div>
             <span class="task-priority tp-high">HIGH</span>
             <span class="task-source">VS Code</span>
+            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
           <div class="task-item">
             <div class="task-check" onclick="toggleTask(this)"></div>
             <div class="task-text">Submit Friday deliverable — deadline detected</div>
             <span class="task-priority tp-high">HIGH</span>
             <span class="task-source">WhatsApp</span>
+            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
           <div class="task-item">
             <div class="task-check" onclick="toggleTask(this)"></div>
             <div class="task-text">Update Notion sprint board</div>
             <span class="task-priority tp-low">LOW</span>
             <span class="task-source">Notion</span>
+            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
           </div>
         </div>
         <div style="margin-top:14px">
@@ -551,7 +582,7 @@
           </div>
           <div>
             <div style="font-size:12px;color:var(--text-primary);font-weight:600">Great progress!</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">3 tasks left today</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px" id="tasksLeftLabel">3 tasks left today</div>
             <div style="font-size:11px;color:var(--cyan);margin-top:6px">↑ +12% vs yesterday</div>
           </div>
         </div>
@@ -716,6 +747,54 @@
     });
   });
 
+  // ── ADD TASK MODAL ──
+  function openAddTaskModal() {
+    document.getElementById('atmTitle').value   = '';
+    document.getElementById('atmPriority').value = 'HIGH';
+    document.getElementById('atmSource').value   = 'VS Code';
+    document.getElementById('addTaskModal').classList.add('open');
+    setTimeout(() => document.getElementById('atmTitle').focus(), 60);
+  }
+  function closeAddTaskModal() {
+    document.getElementById('addTaskModal').classList.remove('open');
+  }
+  function addNewTask() {
+    const title = document.getElementById('atmTitle').value.trim();
+    if (!title) { document.getElementById('atmTitle').focus(); return; }
+    const priority = document.getElementById('atmPriority').value;
+    const source   = document.getElementById('atmSource').value;
+    const prioClass = priority === 'HIGH' ? 'tp-high' : priority === 'MED' ? 'tp-medium' : 'tp-low';
+    const item = document.createElement('div');
+    item.className = 'task-item';
+    item.innerHTML = `
+      <div class="task-check" onclick="toggleTask(this)"></div>
+      <div class="task-text">${title.replace(/</g,'&lt;')}</div>
+      <span class="task-priority ${prioClass}">${priority}</span>
+      <span class="task-source">${source.replace(/</g,'&lt;')}</span>
+      <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>`;
+    document.getElementById('taskList').appendChild(item);
+    // animate in
+    item.style.opacity = '0'; item.style.transform = 'translateY(8px)';
+    requestAnimationFrame(() => {
+      item.style.transition = 'opacity 0.25s,transform 0.25s';
+      item.style.opacity = '1'; item.style.transform = 'translateY(0)';
+    });
+    closeAddTaskModal();
+    updateProgress();
+    showToast('✓ Task added');
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAddTaskModal();
+  });
+
+  // ── DELETE TASK ──
+  function deleteTask(el) {
+    const item = el.closest('.task-item');
+    item.style.transition = 'opacity 0.2s,transform 0.2s';
+    item.style.opacity = '0'; item.style.transform = 'translateX(12px)';
+    setTimeout(() => { item.remove(); updateProgress(); }, 200);
+  }
+
   // ── TASK TOGGLE ──
   function toggleTask(checkEl) {
     const item = checkEl.closest('.task-item');
@@ -734,11 +813,34 @@
   }
 
   function updateProgress() {
-    const tasks = document.querySelectorAll('.task-item');
-    const done  = document.querySelectorAll('.task-item.done').length;
-    const pct   = Math.round((done / tasks.length) * 100);
-    document.getElementById('progressPct').textContent = pct + '%';
-    document.getElementById('progressBar').style.width = pct + '%';
+    const tasks    = document.querySelectorAll('.task-item');
+    const doneCount = document.querySelectorAll('.task-item.done').length;
+    const total    = tasks.length;
+    const pct      = total ? Math.round((doneCount / total) * 100) : 0;
+    const remaining = total - doneCount;
+
+    // Top progress bar + label
+    document.getElementById('progressPct').textContent  = pct + '%';
+    document.getElementById('progressBar').style.width  = pct + '%';
+
+    // Header count label
+    const countLabel = document.getElementById('taskCountLabel');
+    if (countLabel) countLabel.textContent = doneCount + ' / ' + total + ' done';
+
+    // Mini ring SVG arc (circumference = 201)
+    const ring = document.getElementById('miniRing');
+    if (ring) {
+      ring.style.transition = 'stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1)';
+      ring.style.strokeDashoffset = 201 - (pct / 100) * 201;
+    }
+
+    // Mini ring centre label
+    const ringVal = document.querySelector('.mini-ring-val');
+    if (ringVal) ringVal.textContent = pct + '%';
+
+    // "X tasks left today" sub-text
+    const ringSub = document.getElementById('tasksLeftLabel');
+    if (ringSub) ringSub.textContent = remaining + ' task' + (remaining !== 1 ? 's' : '') + ' left today';
   }
 
   // ── RESUME WORK ──
@@ -762,6 +864,48 @@
     setTimeout(() => t.classList.remove('show'), 2800);
   }
 </script>
+<!-- ADD TASK MODAL -->
+<div id="addTaskModal" class="atm-overlay" onclick="if(event.target===this)closeAddTaskModal()">
+  <div class="atm-box">
+    <div class="atm-title">ADD TASK</div>
+    <div class="atm-sub">New item for today's work list</div>
+    <div class="atm-field">
+      <label>Task Title</label>
+      <input id="atmTitle" type="text" placeholder="What needs to be done?" maxlength="120"
+             onkeydown="if(event.key==='Enter')addNewTask()"/>
+    </div>
+    <div class="atm-row">
+      <div class="atm-field">
+        <label>Priority</label>
+        <select id="atmPriority">
+          <option value="HIGH">🔴  HIGH</option>
+          <option value="MED">🟡  MED</option>
+          <option value="LOW">🟢  LOW</option>
+        </select>
+      </div>
+      <div class="atm-field">
+        <label>Source / App</label>
+        <select id="atmSource">
+          <option>VS Code</option>
+          <option>GitHub</option>
+          <option>Notion</option>
+          <option>Calendar</option>
+          <option>Slack</option>
+          <option>WhatsApp</option>
+          <option>Email</option>
+          <option>Jira</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="atm-actions">
+      <button class="atm-btn atm-btn-cancel" onclick="closeAddTaskModal()">CANCEL</button>
+      <button class="atm-btn atm-btn-add"    onclick="addNewTask()">＋ ADD TASK</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/app.js"></script>
+<script src="js/work.js"></script>
 </body>
 </html>
