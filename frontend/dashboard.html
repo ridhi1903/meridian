@@ -870,7 +870,9 @@
   function togglePrivacy(el) {
     const pip = document.getElementById('ghostPip');
     pip.classList.toggle('on');
-    if (pip.classList.contains('on')) {
+    const isOn = pip.classList.contains('on');
+    localStorage.setItem('meridian_ghost_mode', String(isOn));
+    if (isOn) {
       showToast('🔒 Ghost Layer ACTIVE — document content hidden');
     } else {
       showToast('👁️ Ghost Layer OFF — normal monitoring');

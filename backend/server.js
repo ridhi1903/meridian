@@ -1,6 +1,7 @@
-const express = require('express');
-const cors    = require('cors');
-const path    = require('path');
+const express   = require('express');
+const cors      = require('cors');
+const path      = require('path');
+const authRouter = require('./routes/auth');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -17,19 +18,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', system: 'MERIDIAN', time: new Date().toISOString() });
 });
 
-// ── API: Mock session validate ──
-app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
-  if (username === 'admin' && password === 'meridian') {
-    res.json({
-      success: true,
-      user: { name: 'Anika Reddy', initials: 'AT', role: 'Security Engineer', email: 'admin@meridian.io' },
-      expiresIn: 8 * 60 * 60 * 1000
-    });
-  } else {
-    res.status(401).json({ success: false, message: 'Invalid credentials' });
-  }
-});
+// ── API: Auth routes (login / logout / validate) ──
+app.use('/api/auth', authRouter);
 
 // ── API: Mock device states ──
 app.get('/api/devices', (_req, res) => {

@@ -187,7 +187,7 @@
       width:18px; height:18px; border-radius:50%;
       border:1.5px solid var(--border); display:flex; align-items:center;
       justify-content:center; flex-shrink:0; transition:all 0.2s;
-      cursor:pointer;
+      pointer-events:none;
     }
     .task-check.checked { background:var(--green); border-color:var(--green); color:#040812; font-size:10px; }
     .task-text { flex:1; font-size:13px; color:var(--text-primary); }
@@ -467,54 +467,54 @@
       <div class="card" style="animation-delay:0.15s">
         <div class="card-label"><div class="card-label-dot"></div>TODAY'S TASKS <span id="taskCountLabel" style="margin-left:auto;font-size:11px;color:var(--green)">3 / 7 done</span><button onclick="openAddTaskModal()" style="margin-left:12px;padding:4px 12px;border-radius:20px;border:1px solid var(--cyan);background:var(--cyan-dim);color:var(--cyan);font-size:10px;letter-spacing:1px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s" onmouseover="this.style.background='var(--cyan)';this.style.color='#040812'" onmouseout="this.style.background='var(--cyan-dim)';this.style.color='var(--cyan)'">＋ ADD</button></div>
         <div class="task-list" id="taskList">
-          <div class="task-item done">
-            <div class="task-check checked" onclick="toggleTask(this)">✓</div>
+          <div class="task-item done" onclick="toggleTask(this.querySelector('.task-check'))">
+            <div class="task-check checked">✓</div>
             <div class="task-text">Fix JWT token validation edge case</div>
             <span class="task-priority tp-high">HIGH</span>
             <span class="task-source">VS Code</span>
-            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
+            <span class="task-del" onclick="event.stopPropagation();deleteTask(this)" title="Delete task">✕</span>
           </div>
-          <div class="task-item done">
-            <div class="task-check checked" onclick="toggleTask(this)">✓</div>
+          <div class="task-item done" onclick="toggleTask(this.querySelector('.task-check'))">
+            <div class="task-check checked">✓</div>
             <div class="task-text">Push PR #47 — feature/knox-auth</div>
             <span class="task-priority tp-high">HIGH</span>
             <span class="task-source">GitHub</span>
-            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
+            <span class="task-del" onclick="event.stopPropagation();deleteTask(this)" title="Delete task">✕</span>
           </div>
-          <div class="task-item">
-            <div class="task-check" onclick="toggleTask(this)"></div>
+          <div class="task-item" onclick="toggleTask(this.querySelector('.task-check'))">
+            <div class="task-check"></div>
             <div class="task-text">Review SmartThings SDK docs</div>
             <span class="task-priority tp-medium">MED</span>
             <span class="task-source">Notion</span>
-            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
+            <span class="task-del" onclick="event.stopPropagation();deleteTask(this)" title="Delete task">✕</span>
           </div>
-          <div class="task-item done">
-            <div class="task-check checked" onclick="toggleTask(this)">✓</div>
+          <div class="task-item done" onclick="toggleTask(this.querySelector('.task-check'))">
+            <div class="task-check checked">✓</div>
             <div class="task-text">Stand-up call with team</div>
             <span class="task-priority tp-low">LOW</span>
             <span class="task-source">Calendar</span>
-            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
+            <span class="task-del" onclick="event.stopPropagation();deleteTask(this)" title="Delete task">✕</span>
           </div>
-          <div class="task-item">
-            <div class="task-check" onclick="toggleTask(this)"></div>
+          <div class="task-item" onclick="toggleTask(this.querySelector('.task-check'))">
+            <div class="task-check"></div>
             <div class="task-text">Write unit tests for refresh token</div>
             <span class="task-priority tp-high">HIGH</span>
             <span class="task-source">VS Code</span>
-            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
+            <span class="task-del" onclick="event.stopPropagation();deleteTask(this)" title="Delete task">✕</span>
           </div>
-          <div class="task-item">
-            <div class="task-check" onclick="toggleTask(this)"></div>
+          <div class="task-item" onclick="toggleTask(this.querySelector('.task-check'))">
+            <div class="task-check"></div>
             <div class="task-text">Submit Friday deliverable — deadline detected</div>
             <span class="task-priority tp-high">HIGH</span>
             <span class="task-source">Gmail</span>
-            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
+            <span class="task-del" onclick="event.stopPropagation();deleteTask(this)" title="Delete task">✕</span>
           </div>
-          <div class="task-item">
-            <div class="task-check" onclick="toggleTask(this)"></div>
+          <div class="task-item" onclick="toggleTask(this.querySelector('.task-check'))">
+            <div class="task-check"></div>
             <div class="task-text">Update Notion sprint board</div>
             <span class="task-priority tp-low">LOW</span>
             <span class="task-source">Notion</span>
-            <span class="task-del" onclick="deleteTask(this)" title="Delete task">✕</span>
+            <span class="task-del" onclick="event.stopPropagation();deleteTask(this)" title="Delete task">✕</span>
           </div>
         </div>
         <div style="margin-top:14px">
@@ -577,7 +577,7 @@
               </defs>
             </svg>
             <div class="mini-ring-label">
-              <div class="mini-ring-val">70%</div>
+              <div class="mini-ring-val">0%</div>
               <div class="mini-ring-sub">DONE</div>
             </div>
           </div>
@@ -681,23 +681,20 @@
             <div class="app-card-status ok">● Connected</div>
             <div class="app-card-count">3 events</div>
           </div>
-          <div class="app-card" onclick="showToast('Gmail: Connecting...')">
-            <div class="app-card-icon">📧</div>
-            <div class="app-card-name">Gmail</div>
-            <div class="app-card-status warn">● Syncing</div>
-            <div class="app-card-count">8 unread</div>
+          <div class="app-card" onclick="showToast('WhatsApp: 5 unread messages')">
+            <div class="app-card-icon">💚</div>
+            <div class="app-card-name">WhatsApp</div>
+            <div class="app-card-status warn">● 1 deadline</div>
+            <div class="app-card-count">5 unread</div>
           </div>
         </div>
+        <!-- ── SCAN & SYNC PANEL ── -->
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">SCAN &amp; SYNC — Detected from Gmail</div>
-          <div style="background:var(--bg-card2);border:1px solid var(--yellow);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
-            <span style="font-size:16px">⚠️</span>
-            <div style="flex:1">
-              <div style="font-size:12px;color:var(--text-primary)">“Submit by Friday” — deadline detected</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">From: Gmail Inbox · 11:32 AM</div>
-            </div>
-            <button class="btn btn-cyan" style="padding:5px 10px;font-size:10px" onclick="showToast('✓ Added to Calendar — Friday deadline')">Add to Calendar</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:11px;color:var(--text-muted);letter-spacing:1.5px">SCAN &amp; SYNC — Detected from Messages &amp; Email</div>
+            <div style="font-size:10px;color:var(--cyan);letter-spacing:1px" id="scanAddedCount"></div>
           </div>
+          <div id="scanSyncList" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
       </div>
     </div>
@@ -728,18 +725,10 @@
 
   // ── ANIMATIONS ON LOAD ──
   window.addEventListener('load', () => {
-    // Progress bar
+    // Let updateProgress() compute real values from actual task states
     setTimeout(() => {
-      document.getElementById('progressBar').style.width = '70%';
+      updateProgress();
     }, 400);
-
-    // Mini ring
-    setTimeout(() => {
-      const ring = document.getElementById('miniRing');
-      const offset = 201 - (0.7 * 201);
-      ring.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1)';
-      ring.style.strokeDashoffset = offset;
-    }, 500);
 
     // Session bars
     document.querySelectorAll('.session-bar-fill').forEach(bar => {
@@ -854,7 +843,11 @@
   function togglePrivacy(el) {
     const pip = document.getElementById('ghostPip');
     pip.classList.toggle('on');
-    showToast(pip.classList.contains('on') ? '🔒 Ghost Layer ACTIVE' : '👁️ Ghost Layer OFF');
+    const isOn = pip.classList.contains('on');
+    localStorage.setItem('meridian_ghost_mode', String(isOn));
+    showToast(isOn ? '🔒 Ghost Layer ACTIVE' : '👁️ Ghost Layer OFF');
+    // Re-render scan panel immediately on this page
+    if (typeof _renderScanSync === 'function') _renderScanSync();
   }
 
   // ── TOAST ──
@@ -864,6 +857,106 @@
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2800);
   }
+
+  // ── SCAN & SYNC — detected events ──
+  const SCAN_EVENTS = [
+    { id:'sc1', icon:'⚠️', label:'"Submit by Friday" — deadline detected',     source:'Gmail Inbox',    time:'11:32 AM', calDate:'2026-05-08', calTime:'09:00', calColor:'red'    },
+    { id:'sc2', icon:'📅', label:'"Stand-up every Monday at 9AM" — recurring', source:'Slack #team',    time:'10:14 AM', calDate:'2026-05-11', calTime:'09:00', calColor:'cyan'   },
+    { id:'sc3', icon:'⚠️', label:'"Hackathon submission due May 12" — deadline',source:'Gmail Inbox',    time:'09:55 AM', calDate:'2026-05-12', calTime:'23:59', calColor:'red'    },
+    { id:'sc4', icon:'📋', label:'"Sprint review on Thursday 2PM" — meeting',  source:'Gmail Inbox',    time:'Yesterday', calDate:'2026-05-14', calTime:'14:00', calColor:'yellow' },
+    { id:'sc5', icon:'📌', label:'"Deliver PR by end of week" — task',         source:'Slack #dev',     time:'08:41 AM', calDate:'2026-05-15', calTime:'17:00', calColor:'purple' },
+  ];
+
+  const SCAN_CAL_KEY = 'meridian_cal_events';
+
+  function _renderScanSync() {
+    const list = document.getElementById('scanSyncList');
+    if (!list) return;
+    const ghostOn = localStorage.getItem('meridian_ghost_mode') === 'true';
+
+    if (ghostOn) {
+      list.innerHTML = `<div style="font-size:12px;color:#7c3aed;padding:12px 14px;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.25);border-radius:8px;letter-spacing:0.5px">
+        🛡️ Ghost Layer active — message scanning paused for privacy.</div>`;
+      return;
+    }
+
+    // Load already-added IDs
+    const addedIds = JSON.parse(localStorage.getItem('meridian_scan_added') || '[]');
+
+    list.innerHTML = SCAN_EVENTS.map(ev => {
+      const added = addedIds.includes(ev.id);
+      return `<div style="background:var(--bg-card2);border:1px solid ${added ? 'rgba(0,255,136,0.3)' : 'rgba(255,215,0,0.3)'};border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;" id="scan-row-${ev.id}">
+        <span style="font-size:15px;flex-shrink:0">${ev.icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.label}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px">From: ${ev.source} · ${ev.time}</div>
+        </div>
+        ${added
+          ? `<span style="font-size:10px;color:var(--green);letter-spacing:1px;flex-shrink:0">✓ ADDED</span>`
+          : `<button class="btn btn-cyan" style="padding:5px 10px;font-size:10px;flex-shrink:0" onclick="addScanToCalendar('${ev.id}')">Add to Calendar</button>`
+        }
+      </div>`;
+    }).join('');
+
+    // update badge
+    const badge = document.getElementById('scanAddedCount');
+    if (badge) badge.textContent = addedIds.length > 0 ? `${addedIds.length}/${SCAN_EVENTS.length} added` : '';
+  }
+
+  function addScanToCalendar(id) {
+    const ev = SCAN_EVENTS.find(e => e.id === id);
+    if (!ev) return;
+
+    // Save to calendar storage
+    try {
+      const cal = JSON.parse(localStorage.getItem(SCAN_CAL_KEY) || '{}');
+      if (!cal[ev.calDate]) cal[ev.calDate] = [];
+      // Avoid duplicate
+      if (!cal[ev.calDate].find(e => e.id === 'scan-' + ev.id)) {
+        const labelClean = ev.label.replace(/^[""]|[""].*$/g, '').trim().split(' — ')[0].replace(/^"|"$/g,'');
+        cal[ev.calDate].push({ id:'scan-' + ev.id, time: ev.calTime, label: labelClean, color: ev.calColor });
+        localStorage.setItem(SCAN_CAL_KEY, JSON.stringify(cal));
+      }
+    } catch(_) {}
+
+    // Mark as added
+    const added = JSON.parse(localStorage.getItem('meridian_scan_added') || '[]');
+    if (!added.includes(id)) { added.push(id); localStorage.setItem('meridian_scan_added', JSON.stringify(added)); }
+
+    showToast('✓ Added to Calendar — ' + ev.calDate);
+    _renderScanSync();
+  }
+
+  // Expose so work.js _applyGhostEffects can also trigger a re-render
+  window._renderScanSync = _renderScanSync;
+
+  // Restore ghost pip visual from localStorage, then render immediately
+  (function() {
+    // Clear scan-added state on every load so demo always starts fresh
+    localStorage.removeItem('meridian_scan_added');
+    // Also remove any previously scan-added entries from the calendar
+    try {
+      const cal = JSON.parse(localStorage.getItem(SCAN_CAL_KEY) || '{}');
+      let changed = false;
+      for (const date in cal) {
+        const filtered = cal[date].filter(e => !String(e.id).startsWith('scan-'));
+        if (filtered.length !== cal[date].length) { cal[date] = filtered; changed = true; }
+        if (cal[date].length === 0) delete cal[date];
+      }
+      if (changed) localStorage.setItem(SCAN_CAL_KEY, JSON.stringify(cal));
+    } catch(_) {}
+
+    if (localStorage.getItem('meridian_ghost_mode') === 'true') {
+      const pip = document.getElementById('ghostPip');
+      if (pip) pip.classList.add('on');
+    }
+    _renderScanSync();
+  })();
+
+  // Re-render if ghost mode changes from another tab
+  window.addEventListener('storage', (e) => { if (e.key === 'meridian_ghost_mode' || e.key === 'meridian_perm_msg') _renderScanSync(); });
+  // Re-render if ghost mode is toggled via app.js GhostMode (fires a custom event)
+  window.addEventListener('meridian:ghostmode', _renderScanSync);
 </script>
 <!-- ADD TASK MODAL -->
 <div id="addTaskModal" class="atm-overlay" onclick="if(event.target===this)closeAddTaskModal()">
