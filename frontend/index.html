@@ -491,7 +491,7 @@
           <label class="form-label" for="password">Access Key</label>
           <input class="form-input" type="password" id="password" placeholder="••••••••" />
         </div>
-        <div class="error-msg" id="errorMsg">Invalid credentials. Try user: <strong>admin</strong> / pass: <strong>meridian</strong></div>
+        <div class="error-msg" id="errorMsg">Invalid credentials. Please try again.</div>
 
         <button class="btn-primary" type="submit" id="loginBtn">
           <div class="btn-shine"></div>
@@ -629,19 +629,32 @@
       btnText.style.display = 'none';
       btnLoader.style.display = 'block';
 
-      setTimeout(() => {
-        if ((user === 'admin' || user === 'anika.reddy') && pass === 'meridian') {
-          if (typeof MERIDIAN !== 'undefined') MERIDIAN.Session.create(user);
-          showToast('✓ Authentication successful — Loading cognitive layer...');
-          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
-        } else {
+      // Validate via backend API — no credentials in frontend code
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            if (typeof MERIDIAN !== 'undefined') MERIDIAN.Session.create(user);
+            showToast('✓ Authentication successful — Loading cognitive layer...');
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+          } else {
+            btnText.style.display = 'block';
+            btnLoader.style.display = 'none';
+            errEl.style.display = 'block';
+            document.getElementById('password').value = '';
+            document.getElementById('password').focus();
+          }
+        })
+        .catch(() => {
           btnText.style.display = 'block';
           btnLoader.style.display = 'none';
+          errEl.textContent = 'Server unreachable. Is the backend running?';
           errEl.style.display = 'block';
-          document.getElementById('password').value = '';
-          document.getElementById('password').focus();
-        }
-      }, 1000);
+        });
     });
 
     // ── TOAST ──

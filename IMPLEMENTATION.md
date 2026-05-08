@@ -62,7 +62,7 @@ meridian/
 - Animated neural network canvas background (nodes + connections)
 - MERIDIAN brand with glowing text effect
 - Login form: username + password
-- Default credentials: `admin` / `meridian`
+- Credentials configured via `backend/.env` (see `.env.example`)
 - Creates a session in `localStorage` with 8-hour expiry
 - Animated feature pills showing system capabilities
 - Live clock in status bar
@@ -268,7 +268,7 @@ MERIDIAN.PageTransition — navigate(url)
 MERIDIAN.OnDevice    — isProcessing, setProcessing
 ```
 
-Default credentials enforced: `admin` / `meridian`  
+Credentials configured via `backend/.env`  
 Session expires: 8 hours  
 
 ---

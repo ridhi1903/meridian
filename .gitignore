@@ -1,10 +1,11 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables (SENSITIVE — never commit)
 .env
 .env.local
 .env.*.local
+!.env.example
 
 # Logs
 logs/
@@ -26,3 +27,6 @@ build/
 # Temp files
 temp/
 *.tmp
+
+# Lock files (optional — keeps repo cleaner)
+package-lock.json

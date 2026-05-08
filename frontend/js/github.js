@@ -15,17 +15,17 @@
 const GitHubPulse = (() => {
 
   /* ── CONSTANTS ── */
-  const POLL_INTERVAL   = 120_000; // 2 minutes
-  const API_ENDPOINT    = '/api/github-pulse';
-  const VELOCITY_KEY    = 'meridian_velocity_score';
-  const GHOST_KEY       = 'meridian_ghost_mode';
-  const PAUSED_KEY      = 'meridian_pulse_paused';
+  const POLL_INTERVAL = 120_000; // 2 minutes
+  const API_ENDPOINT = '/api/github-pulse';
+  const VELOCITY_KEY = 'meridian_velocity_score';
+  const GHOST_KEY = 'meridian_ghost_mode';
+  const PAUSED_KEY = 'meridian_pulse_paused';
 
   /* ── STATE ── */
-  let _lastData  = null;
+  let _lastData = null;
   let _pollTimer = null;
   let _isGhostOn = false;
-  let _isPaused  = false;
+  let _isPaused = false;
 
   /* ─────────────────────────────────────────────
      INIT — call on DOMContentLoaded
@@ -98,10 +98,10 @@ const GitHubPulse = (() => {
   ───────────────────────────────────────────── */
   function _updateDashboard(data) {
     // ── GitHub Pulse card (new card injected via HTML) ──
-    const pulseMsg   = document.getElementById('ghPulseMsg');
+    const pulseMsg = document.getElementById('ghPulseMsg');
     const pulseAuthor = document.getElementById('ghPulseAuthor');
-    const pulseTime  = document.getElementById('ghPulseTime');
-    const pulseDot   = document.getElementById('ghPulseDot');
+    const pulseTime = document.getElementById('ghPulseTime');
+    const pulseDot = document.getElementById('ghPulseDot');
     const pulseScore = document.getElementById('ghPulseScore');
 
     if (pulseMsg) {
@@ -119,13 +119,13 @@ const GitHubPulse = (() => {
       // Glow colour based on velocity score
       if (data.velocityScore >= 80) {
         pulseDot.style.background = 'var(--green)';
-        pulseDot.style.boxShadow  = '0 0 8px var(--green)';
+        pulseDot.style.boxShadow = '0 0 8px var(--green)';
       } else if (data.velocityScore >= 50) {
         pulseDot.style.background = 'var(--yellow)';
-        pulseDot.style.boxShadow  = '0 0 8px var(--yellow)';
+        pulseDot.style.boxShadow = '0 0 8px var(--yellow)';
       } else {
         pulseDot.style.background = 'var(--red)';
-        pulseDot.style.boxShadow  = '0 0 8px var(--red)';
+        pulseDot.style.boxShadow = '0 0 8px var(--red)';
       }
     }
     if (pulseScore) {
@@ -138,20 +138,20 @@ const GitHubPulse = (() => {
 
     // ── GitHub Stats: commit counts ──
     const statCommits = document.getElementById('ghStatCommits');
-    const statToday   = document.getElementById('ghStatToday');
+    const statToday = document.getElementById('ghStatToday');
     if (statCommits) statCommits.textContent = data.commitCount;
     if (statToday && data.targets) statToday.textContent = data.targets.actual;
 
     // ── Daily target analysis ──
-    const targetLabel  = document.getElementById('ghTargetLabel');
-    const targetBar    = document.getElementById('ghTargetBar');
-    const targetBadge  = document.getElementById('ghTargetBadge');
+    const targetLabel = document.getElementById('ghTargetLabel');
+    const targetBar = document.getElementById('ghTargetBar');
+    const targetBadge = document.getElementById('ghTargetBadge');
     if (data.targets) {
       if (targetLabel) targetLabel.textContent = data.targets.message;
-      if (targetBar)   targetBar.style.width   = data.targets.pct + '%';
+      if (targetBar) targetBar.style.width = data.targets.pct + '%';
       if (targetBadge) {
         targetBadge.textContent = data.targets.met ? '✓ TARGET MET' : `${data.targets.actual}/${data.targets.target}`;
-        targetBadge.className   = 'tag ' + (data.targets.met ? 'tag-green' : 'tag-yellow');
+        targetBadge.className = 'tag ' + (data.targets.met ? 'tag-green' : 'tag-yellow');
       }
     }
 
@@ -247,9 +247,9 @@ const GitHubPulse = (() => {
 
     // Snap stat: Commits
     const snapStat2 = document.querySelector('.snap-stat:nth-child(2) .snap-stat-val');
-    const snapLbl2  = document.querySelector('.snap-stat:nth-child(2) .snap-stat-label');
+    const snapLbl2 = document.querySelector('.snap-stat:nth-child(2) .snap-stat-label');
     if (snapStat2) snapStat2.textContent = data.commitCount;
-    if (snapLbl2)  snapLbl2.textContent  = 'Commits';
+    if (snapLbl2) snapLbl2.textContent = 'Commits';
   }
 
   /* ─────────────────────────────────────────────
@@ -258,10 +258,10 @@ const GitHubPulse = (() => {
   function _applyGhostBlur() {
     document.querySelectorAll('.blur-sensitive').forEach(el => {
       if (_isGhostOn) {
-        el.style.filter     = 'blur(5px)';
+        el.style.filter = 'blur(5px)';
         el.style.userSelect = 'none';
       } else {
-        el.style.filter     = '';
+        el.style.filter = '';
         el.style.userSelect = '';
       }
     });
@@ -273,11 +273,11 @@ const GitHubPulse = (() => {
   function _formatRelativeTime(isoStr) {
     const elapsed = Date.now() - new Date(isoStr).getTime();
     const sec = Math.floor(elapsed / 1000);
-    if (sec < 60)   return 'just now';
+    if (sec < 60) return 'just now';
     const min = Math.floor(sec / 60);
-    if (min < 60)   return min + 'm ago';
+    if (min < 60) return min + 'm ago';
     const hr = Math.floor(min / 60);
-    if (hr < 24)    return hr + 'h ago';
+    if (hr < 24) return hr + 'h ago';
     const days = Math.floor(hr / 24);
     return days + 'd ago';
   }
@@ -318,7 +318,7 @@ const GitHubPulse = (() => {
     const dot = document.getElementById('ghPulseDot');
     if (dot) {
       dot.style.background = 'var(--text-muted)';
-      dot.style.boxShadow  = 'none';
+      dot.style.boxShadow = 'none';
     }
     const msg = document.getElementById('ghPulseMsg');
     if (msg && !_lastData) msg.textContent = '⏸ Monitoring paused';
@@ -350,14 +350,14 @@ const GitHubPulse = (() => {
 
     if (_isPaused) {
       btn.textContent = '▶ RESUME';
-      btn.style.background   = 'var(--green-dim)';
-      btn.style.borderColor  = 'var(--green)';
-      btn.style.color        = 'var(--green)';
+      btn.style.background = 'var(--green-dim)';
+      btn.style.borderColor = 'var(--green)';
+      btn.style.color = 'var(--green)';
     } else {
       btn.textContent = '⏸ PAUSE';
-      btn.style.background   = 'var(--yellow-dim)';
-      btn.style.borderColor  = 'var(--yellow)';
-      btn.style.color        = 'var(--yellow)';
+      btn.style.background = 'var(--yellow-dim)';
+      btn.style.borderColor = 'var(--yellow)';
+      btn.style.color = 'var(--yellow)';
     }
 
     btn.addEventListener('click', () => {

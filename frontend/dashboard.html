@@ -459,6 +459,10 @@
   </div>
   <div class="topbar-right">
     <div class="sys-dot">
+      <div class="pulse-dot" id="adbStatusDot"></div>
+      <span>ADB Connected</span>
+    </div>
+    <div class="sys-dot">
       <div class="pulse-dot"></div>
       <span>7 devices synced</span>
     </div>
@@ -474,7 +478,7 @@
     <div class="greeting">
       <div class="greeting-text">
         <h1>Good Morning, <span>Anika</span> 👋</h1>
-        <p>Your cognitive layer is active. Focus session detected — 45 min deep work streak.</p>
+        <p>Your cognitive layer is active. Currently using: <strong id="active-app-name" style="font-family:'Orbitron',sans-serif;color:var(--cyan)">Waiting…</strong></p>
       </div>
       <div class="date-badge">
         <strong id="dateStr">Mon, May 5</strong>
@@ -678,8 +682,8 @@
       <div class="card" style="animation-delay:0.45s">
         <div class="card-label"><div class="card-label-dot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></div>DISTRACTION LOOP DETECTOR</div>
         <div class="loop-header">
-          <div class="loop-badge" id="loopBadge">LOOP DETECTED</div>
-          <span style="font-size:11px;color:var(--text-muted);">Repeated 3× today</span>
+          <div class="loop-badge safe" id="loopBadge">NO LOOP</div>
+          <span id="loopRepeatCount" style="font-size:11px;color:var(--text-muted);">No consecutive distractions</span>
         </div>
         <div class="loop-chain">
           <div class="loop-app">📸 Instagram</div>
@@ -705,7 +709,7 @@
         </div>
         <div style="margin-top:14px;display:flex;gap:8px;">
           <button class="btn-sm cyan" onclick="blockLoop()">🚫 Block Apps (5 sec delay)</button>
-          <button class="btn-sm ghost" onclick="clearLoop()">✓ Clear Detection</button>
+          <button class="btn-sm ghost" onclick="ADBPoller.resetLoop()">✓ Clear Detection</button>
         </div>
       </div>
 
@@ -975,5 +979,6 @@
 <script src="js/app.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/github.js"></script>
+<script src="js/adb-poller.js"></script>
 </body>
 </html>

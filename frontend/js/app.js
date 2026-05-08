@@ -29,12 +29,11 @@ const MERIDIAN = (() => {
   const THEME_KEY     = 'meridian_theme';
   const LOGIN_PAGE    = 'index.html';
 
-  /* ── DEFAULT USER (matches login: admin / meridian) ── */
+  /* ── DEFAULT USER ── */
   const DEFAULT_USER = {
     name:    'Anika Reddy',
     initials:'AT',
     role:    'Security Engineer',
-    email:   'admin@meridian.io',
   };
 
   /* ─────────────────────────────────────────────
