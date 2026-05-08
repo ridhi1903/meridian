@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MERIDIAN — Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg-primary:#040812; --bg-secondary:#080f1e; --bg-card:#0d1628; --bg-card2:#0a1220;
+      --bg-sidebar:rgba(8,15,30,0.97); --bg-topbar:rgba(4,8,18,0.92);
+      --cyan:#00d4ff; --cyan-dim:#00d4ff22; --cyan-mid:#00d4ff44;
+      --green:#00ff88; --green-dim:#00ff8822;
+      --yellow:#ffd700; --yellow-dim:#ffd70022;
+      --red:#ff4757; --red-dim:#ff475722;
+      --purple:#7c3aed; --purple-dim:#7c3aed22;
+      --text-primary:#e8f4fd; --text-muted:#6b8aad;
+      --border:#1a2d4a; --sidebar-w:240px;
+    }
+    html,body { height:100%; background:var(--bg-primary); color:var(--text-primary); font-family:'Inter',sans-serif; overflow-x:hidden; }
+
+    .grid-bg { position:fixed; inset:0; z-index:0; background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px); background-size:50px 50px; pointer-events:none; }
+    .scanline { position:fixed; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); opacity:0.3; animation:scanDown 6s linear infinite; pointer-events:none; z-index:5; }
+    @keyframes scanDown { 0%{top:0;opacity:.4} 100%{top:100vh;opacity:0} }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    /* SIDEBAR */
+    .sidebar { position:fixed; left:0; top:0; bottom:0; width:var(--sidebar-w); background:var(--bg-sidebar); border-right:1px solid var(--border); backdrop-filter:blur(16px); z-index:100; display:flex; flex-direction:column; transition:background 0.4s; }
+    .sidebar-logo { padding:24px 20px 20px; border-bottom:1px solid var(--border); }
+    .sidebar-logo .logo-text { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900; letter-spacing:4px; background:linear-gradient(135deg,#fff,var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .sidebar-logo .logo-sub { font-size:10px; color:var(--text-muted); letter-spacing:2px; margin-top:2px; }
+    .user-badge { display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); }
+    .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--cyan),#7c3aed); display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:#040812; flex-shrink:0; }
+    .user-info .name { font-size:13px; font-weight:600; }
+    .user-info .role { font-size:10px; color:var(--cyan); letter-spacing:1px; }
+    .nav { flex:1; padding:16px 0; overflow-y:auto; }
+    .nav-section { padding:8px 20px 4px; font-size:9px; letter-spacing:3px; color:#2a3d55; text-transform:uppercase; }
+    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 20px; color:var(--text-muted); font-size:13px; transition:all 0.2s; text-decoration:none; position:relative; }
+    .nav-item:hover { color:var(--text-primary); background:rgba(0,212,255,0.04); }
+    .nav-item.active { color:var(--cyan); background:var(--cyan-dim); }
+    .nav-item.active::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--cyan); border-radius:0 2px 2px 0; }
+    .nav-icon { font-size:16px; width:20px; text-align:center; }
+    .nav-badge { margin-left:auto; padding:2px 7px; background:var(--red); border-radius:10px; font-size:10px; color:#fff; font-weight:600; }
+    .sidebar-bottom { padding:16px 20px; border-top:1px solid var(--border); }
+    .privacy-toggle-mini { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+    .toggle-pip { width:32px; height:18px; background:#1a2d4a; border-radius:10px; position:relative; }
+    .toggle-pip::after { content:''; position:absolute; top:3px; left:3px; width:12px; height:12px; border-radius:50%; background:var(--text-muted); transition:all 0.3s; }
+    .toggle-pip.on { background:var(--cyan-mid); }
+    .toggle-pip.on::after { left:17px; background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+
+    /* TOPBAR */
+    .topbar { position:fixed; top:0; left:var(--sidebar-w); right:0; height:60px; z-index:90; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:var(--bg-topbar); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); transition:background 0.4s; }
+    .topbar-title { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:600; letter-spacing:3px; }
+    .topbar-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .topbar-clock { font-family:'Orbitron',sans-serif; font-size:13px; color:var(--cyan); letter-spacing:2px; }
+
+    /* LAYOUT */
+    .main { margin-left:var(--sidebar-w); padding-top:60px; min-height:100vh; position:relative; z-index:10; }
+    .content { padding:24px 28px; }
+
+    /* SETTINGS TABS (left) */
+    .settings-layout { display:grid; grid-template-columns:200px 1fr; gap:20px; align-items:start; }
+    .settings-tabs { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; position:sticky; top:80px; animation:fadeIn 0.3s ease; }
+    .stab { display:flex; align-items:center; gap:10px; padding:12px 16px; font-size:13px; color:var(--text-muted); cursor:pointer; border-left:3px solid transparent; transition:all 0.2s; }
+    .stab:hover { color:var(--text-primary); background:rgba(0,212,255,0.04); }
+    .stab.active { color:var(--cyan); background:var(--cyan-dim); border-left-color:var(--cyan); }
+    .stab-icon { font-size:16px; width:20px; text-align:center; flex-shrink:0; }
+    .stab-divider { height:1px; background:var(--border); margin:4px 0; }
+
+    /* PANELS */
+    .panel { display:none; animation:fadeIn 0.3s ease; }
+    .panel.active { display:block; }
+
+    /* CARD */
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; position:relative; overflow:hidden; }
+    .card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan-dim),transparent); }
+    .card-title { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--text-muted); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .card-title-dot { width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 6px var(--cyan); flex-shrink:0; }
+
+    /* SETTING ROW */
+    .srow { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid rgba(26,45,74,0.5); }
+    .srow:last-child { border-bottom:none; }
+    .srow-icon { font-size:20px; width:28px; text-align:center; flex-shrink:0; }
+    .srow-info { flex:1; }
+    .srow-name { font-size:13px; font-weight:500; }
+    .srow-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .stoggle { width:40px; height:22px; border-radius:11px; background:#1a2d4a; border:1px solid var(--border); position:relative; cursor:pointer; transition:all 0.3s; flex-shrink:0; }
+    .stoggle::after { content:''; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:var(--text-muted); transition:all 0.3s; }
+    .stoggle.on { background:var(--cyan-dim); border-color:var(--cyan); }
+    .stoggle.on::after { left:21px; background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+
+    /* SELECT / INPUT */
+    .sselect { background:var(--bg-card2); border:1px solid var(--border); border-radius:7px; padding:7px 12px; font-size:12px; color:var(--text-primary); font-family:'Inter',sans-serif; cursor:pointer; outline:none; transition:border-color 0.2s; min-width:140px; }
+    .sselect:focus { border-color:var(--cyan); }
+    .sinput { background:var(--bg-card2); border:1px solid var(--border); border-radius:7px; padding:7px 12px; font-size:12px; color:var(--text-primary); font-family:'Inter',sans-serif; outline:none; transition:border-color 0.2s; width:100%; }
+    .sinput:focus { border-color:var(--cyan); }
+    .sinput-group { display:flex; gap:8px; align-items:center; }
+    .sinput-group .sinput { flex:1; }
+
+    /* SLIDER */
+    .sslider { -webkit-appearance:none; width:100%; height:4px; border-radius:2px; background:var(--border); outline:none; cursor:pointer; }
+    .sslider::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--cyan); cursor:pointer; box-shadow:0 0 6px var(--cyan); }
+
+    /* INTEGRATION PERMISSION CARDS */
+    .int-perm-card { background:var(--bg-card2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:10px; transition:border-color 0.2s; }
+    .int-perm-card:hover { border-color:#253d5a; }
+    .int-perm-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .int-perm-logo { width:36px; height:36px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .int-perm-name { font-size:13px; font-weight:600; }
+    .int-perm-status { font-size:10px; letter-spacing:1px; margin-top:2px; }
+    .perm-scopes { display:flex; flex-direction:column; gap:6px; }
+    .perm-scope { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--bg-card); border:1px solid var(--border); border-radius:7px; cursor:pointer; transition:all 0.2s; user-select:none; }
+    .perm-scope:hover { border-color:#253d5a; }
+    .perm-scope.on { border-color:rgba(0,212,255,0.35); background:var(--cyan-dim); }
+    .perm-scope.on .scope-check { background:var(--cyan); border-color:var(--cyan); color:#040812; }
+    .scope-check { width:18px; height:18px; border-radius:4px; border:1.5px solid var(--border); background:var(--bg-card2); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; transition:all 0.2s; }
+    .scope-info { flex:1; }
+    .scope-name { font-size:12px; font-weight:500; }
+    .scope-desc { font-size:10px; color:var(--text-muted); margin-top:1px; }
+    .scope-tag { font-size:9px; padding:2px 7px; border-radius:10px; border:1px solid; letter-spacing:1px; flex-shrink:0; }
+    .scope-tag.read    { background:var(--green-dim);  color:var(--green);  border-color:var(--green); }
+    .scope-tag.write   { background:var(--yellow-dim); color:var(--yellow); border-color:var(--yellow); }
+    .scope-tag.admin   { background:var(--red-dim);    color:var(--red);    border-color:var(--red); }
+    .scope-tag.execute { background:var(--purple-dim); color:#c4b5fd;       border-color:#7c3aed; }
+    .disconnected-notice { font-size:11px; color:var(--text-muted); font-style:italic; padding:8px 0; }
+
+    /* USER PROFILE */
+    .avatar-lg { width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,var(--cyan),#7c3aed); display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:22px; font-weight:700; color:#040812; flex-shrink:0; border:2px solid var(--cyan); box-shadow:0 0 20px var(--cyan-dim); }
+    .profile-info { flex:1; }
+
+    /* BUTTONS */
+    .btn { padding:9px 20px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; border:1px solid; letter-spacing:0.5px; }
+    .btn-cyan { background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan); }
+    .btn-cyan:hover { background:var(--cyan); color:#040812; }
+    .btn-red  { background:var(--red-dim);  border-color:var(--red);  color:var(--red); }
+    .btn-red:hover  { background:var(--red); color:#fff; }
+    .btn-ghost { background:transparent; border-color:var(--border); color:var(--text-muted); }
+    .btn-ghost:hover { border-color:var(--text-muted); color:var(--text-primary); }
+
+    /* THEME SWATCHES */
+    .theme-grid { display:flex; gap:10px; flex-wrap:wrap; }
+    .theme-swatch { width:80px; cursor:pointer; border-radius:8px; overflow:hidden; border:2px solid transparent; transition:border-color 0.2s; }
+    .theme-swatch.active { border-color:var(--cyan); box-shadow:0 0 10px var(--cyan-dim); }
+    .theme-preview { height:44px; border-radius:6px 6px 0 0; }
+    .theme-label { font-size:10px; text-align:center; padding:5px 0; background:var(--bg-card2); color:var(--text-muted); letter-spacing:1px; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+    /* TOAST */
+    .toast { position:fixed; bottom:24px; right:28px; background:var(--bg-card); border:1px solid var(--cyan); border-radius:8px; padding:12px 20px; font-size:13px; color:var(--cyan); opacity:0; transform:translateY(10px); transition:all 0.3s; z-index:999; pointer-events:none; }
+    .toast.show { opacity:1; transform:translateY(0); }
+
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+  </style>
+  <script>
+    (function(){
+      try {
+        var s = JSON.parse(localStorage.getItem('meridian_session')||'null');
+        if (!s || Date.now() > s.expiresAt) { localStorage.removeItem('meridian_session'); window.location.replace('index.html'); }
+      } catch(e) { window.location.replace('index.html'); }
+    })();
+  </script>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="scanline"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">MERIDIAN</div>
+    <div class="logo-sub">COGNITIVE OS</div>
+  </div>
+  <div class="user-badge">
+    <div class="avatar" id="sideAvatar">AT</div>
+    <div class="user-info">
+      <div class="name" id="sideName">Anika Reddy</div>
+      <div class="role" id="sideRole">SECURITY ENGINEER</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🧠</span> Dashboard</a>
+    <a class="nav-item" href="work.html"><span class="nav-icon">💼</span> Work Resume</a>
+    <a class="nav-item" href="smarthome.html"><span class="nav-icon">🏠</span> Smart Home</a>
+    <a class="nav-item" href="privacy.html"><span class="nav-icon">🔒</span> Privacy Mode</a>
+    <div class="nav-section">Intelligence</div>
+    <a class="nav-item" href="analytics.html"><span class="nav-icon">📊</span> Analytics</a>
+    <a class="nav-item" href="nudges.html"><span class="nav-icon">🔔</span> Nudges <span class="nav-badge">5</span></a>
+    <a class="nav-item" href="integrations.html"><span class="nav-icon">🔗</span> Integrations</a>
+    <div class="nav-section">System</div>
+    <a class="nav-item active" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="index.html"><span class="nav-icon">⏏️</span> Logout</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="privacy-toggle-mini" onclick="togglePrivacySidebar(this)">
+      <span style="font-size:11px;color:var(--text-muted);letter-spacing:1px;">GHOST LAYER</span>
+      <div class="toggle-pip" id="ghostPip"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">SETTINGS</div>
+    <div class="topbar-sub">System preferences, integration permissions &amp; account</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <button class="btn btn-ghost" style="font-size:11px;padding:7px 16px" onclick="resetAll()">↺ Reset Defaults</button>
+    <button class="btn btn-cyan" style="font-size:11px;padding:7px 16px" onclick="saveAll()">✓ Save Changes</button>
+    <div class="topbar-clock" id="clock">00:00:00</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="content">
+    <div class="settings-layout">
+
+      <!-- LEFT TABS -->
+      <div class="settings-tabs">
+        <div class="stab active" onclick="switchTab('profile')"><span class="stab-icon">👤</span> Profile</div>
+        <div class="stab-divider"></div>
+        <div class="stab" onclick="switchTab('appearance')"><span class="stab-icon">🎨</span> Appearance</div>
+        <div class="stab" onclick="switchTab('notifications')"><span class="stab-icon">🔔</span> Notifications</div>
+        <div class="stab" onclick="switchTab('dashboard')"><span class="stab-icon">🧠</span> Dashboard</div>
+        <div class="stab-divider"></div>
+        <div class="stab" onclick="switchTab('integrations')"><span class="stab-icon">🔗</span> Integration Permissions</div>
+        <div class="stab-divider"></div>
+        <div class="stab" onclick="switchTab('privacy')"><span class="stab-icon">🔒</span> Privacy &amp; Ghost Layer</div>
+        <div class="stab" onclick="switchTab('security')"><span class="stab-icon">🛡️</span> Knox &amp; Security</div>
+        <div class="stab-divider"></div>
+        <div class="stab" onclick="switchTab('advanced')"><span class="stab-icon">⚡</span> Advanced</div>
+      </div>
+
+      <!-- RIGHT PANELS -->
+      <div>
+
+        <!-- ── PROFILE ── -->
+        <div class="panel active" id="panel-profile">
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>USER PROFILE</div>
+            <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+              <div class="avatar-lg" id="profileAvatar">AT</div>
+              <div class="profile-info">
+                <div style="font-size:16px;font-weight:600;margin-bottom:4px" id="profileName">Anika Reddy</div>
+                <div style="font-size:12px;color:var(--cyan);letter-spacing:1px" id="profileRole">SECURITY ENGINEER</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Member since May 2026 · Samsung OpenCLAW Hackathon</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11px" onclick="showToast('📷 Photo upload — coming soon')">Change Photo</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:1px">DISPLAY NAME</div>
+                <input class="sinput" id="inputName" value="Anika Reddy" oninput="updatePreview()"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:1px">ROLE / TITLE</div>
+                <input class="sinput" id="inputRole" value="Security Engineer" oninput="updatePreview()"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:1px">INITIALS (AVATAR)</div>
+                <input class="sinput" id="inputInitials" value="AT" maxlength="3" oninput="updatePreview()"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:1px">EMAIL</div>
+                <input class="sinput" id="inputEmail" value="anika@meridian.os"/>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>CHANGE PASSWORD</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:1px">CURRENT PASSWORD</div>
+                <input class="sinput" type="password" placeholder="••••••••"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:1px">NEW PASSWORD</div>
+                <input class="sinput" type="password" placeholder="••••••••"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:1px">CONFIRM NEW PASSWORD</div>
+                <input class="sinput" type="password" placeholder="••••••••"/>
+              </div>
+              <button class="btn btn-cyan" style="align-self:flex-start;margin-top:4px" onclick="showToast('🔑 Password updated successfully')">Update Password</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── APPEARANCE ── -->
+        <div class="panel" id="panel-appearance">
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>THEME</div>
+            <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 0 8px">DARK</div>
+            <div class="theme-grid">
+              <div class="theme-swatch active" onclick="setTheme(this,'cyber-dark')" data-theme="cyber-dark">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#040812,#0d1628)"></div>
+                <div class="theme-label">CYBER DARK</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'midnight')" data-theme="midnight">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#0a0014,#1a0032)"></div>
+                <div class="theme-label">MIDNIGHT</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'matrix')" data-theme="matrix">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#001a00,#002800)"></div>
+                <div class="theme-label">MATRIX</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'slate')" data-theme="slate">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#0f1117,#1c1e26)"></div>
+                <div class="theme-label">SLATE</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'monochrome')" data-theme="monochrome">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#111,#1f1f1f)"></div>
+                <div class="theme-label">MONO</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:14px 0 8px">&#x1F525; WARM</div>
+            <div class="theme-grid">
+              <div class="theme-swatch" onclick="setTheme(this,'ember')" data-theme="ember">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#100400,#2a0a00)"></div>
+                <div class="theme-label" style="background:#1f0700">EMBER</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'rosewood')" data-theme="rosewood">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#120008,#260014)"></div>
+                <div class="theme-label" style="background:#1a000e">ROSEWOOD</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'amber')" data-theme="amber">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#0d0800,#1e1200)"></div>
+                <div class="theme-label" style="background:#160e00">AMBER</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'solar')" data-theme="solar">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#fdf8f0,#f5f0e8);border:1px solid #e5d8c0"></div>
+                <div class="theme-label" style="background:#f5f0e8;color:#8a7050">SOLAR</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:14px 0 8px">&#x2744;&#xfe0f; COOL</div>
+            <div class="theme-grid">
+              <div class="theme-swatch" onclick="setTheme(this,'ocean')" data-theme="ocean">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#001622,#00263c)"></div>
+                <div class="theme-label" style="background:#001e30">OCEAN</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'forest')" data-theme="forest">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#051205,#0d240d)"></div>
+                <div class="theme-label" style="background:#0a1a08">FOREST</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'lilac')" data-theme="lilac">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#0e0818,#1c1030)"></div>
+                <div class="theme-label" style="background:#160c26">LILAC</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'aurora')" data-theme="aurora">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#fdf4ff,#f8ecff);border:1px solid #e0c8f0"></div>
+                <div class="theme-label" style="background:#f8ecff;color:#7c5a8a">AURORA</div>
+              </div>
+              <div class="theme-swatch" onclick="setTheme(this,'breeze')" data-theme="breeze">
+                <div class="theme-preview" style="background:linear-gradient(135deg,#f0f8ff,#e8f4ff);border:1px solid #b8d8f0"></div>
+                <div class="theme-label" style="background:#e8f4ff;color:#3a6080">BREEZE</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>DISPLAY</div>
+            <div class="srow">
+              <div class="srow-icon">🔤</div>
+              <div class="srow-info">
+                <div class="srow-name">Font Size</div>
+                <div class="srow-desc">UI base font size</div>
+              </div>
+              <select class="sselect" id="fontSizeSelect" onchange="applyFontSize(this.value)">
+                <option value="12">Small (12px)</option>
+                <option value="14" selected>Default (14px)</option>
+                <option value="16">Large (16px)</option>
+              </select>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">✨</div>
+              <div class="srow-info">
+                <div class="srow-name">Animations</div>
+                <div class="srow-desc">Fade-ins, scan lines, particle effects</div>
+              </div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📡</div>
+              <div class="srow-info">
+                <div class="srow-name">Scan Line Effect</div>
+                <div class="srow-desc">Moving cyan scan line across the viewport</div>
+              </div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🌐</div>
+              <div class="srow-info">
+                <div class="srow-name">Grid Background</div>
+                <div class="srow-desc">Subtle dot-grid pattern on all pages</div>
+              </div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🕐</div>
+              <div class="srow-info">
+                <div class="srow-name">Clock Format</div>
+                <div class="srow-desc">Topbar clock display</div>
+              </div>
+              <select class="sselect" id="clockFormatSelect" onchange="applyClockFormat(this.value)">
+                <option value="24" selected>24-hour</option>
+                <option value="12">12-hour (AM/PM)</option>
+              </select>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📊</div>
+              <div class="srow-info">
+                <div class="srow-name">Sidebar Width</div>
+                <div class="srow-desc" id="sidebarWidthLabel">240px</div>
+              </div>
+              <div style="width:140px">
+                <input type="range" class="sslider" min="200" max="300" value="240" oninput="document.getElementById('sidebarWidthLabel').textContent=this.value+'px'"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── NOTIFICATIONS ── -->
+        <div class="panel" id="panel-notifications">
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>NUDGE ALERTS</div>
+            <div class="srow">
+              <div class="srow-icon">🔔</div>
+              <div class="srow-info"><div class="srow-name">Desktop Notifications</div><div class="srow-desc">Show system notifications for high-priority nudges</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🔴</div>
+              <div class="srow-info"><div class="srow-name">High Priority Alerts</div><div class="srow-desc">Always shown immediately</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🟡</div>
+              <div class="srow-info"><div class="srow-name">Medium Priority Alerts</div><div class="srow-desc">Shown during breaks or at end of focus session</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🟢</div>
+              <div class="srow-info"><div class="srow-name">Low Priority Alerts</div><div class="srow-desc">Daily digest only</div></div>
+              <div class="stoggle" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">😴</div>
+              <div class="srow-info"><div class="srow-name">Quiet Hours</div><div class="srow-desc">Suppress non-critical nudges</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🌙</div>
+              <div class="srow-info"><div class="srow-name">Quiet Hours Window</div><div class="srow-desc">No non-critical nudges in this range</div></div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="time" class="sselect" value="22:00" style="min-width:90px"/>
+                <span style="color:var(--text-muted);font-size:11px">to</span>
+                <input type="time" class="sselect" value="08:00" style="min-width:90px"/>
+              </div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">⚡</div>
+              <div class="srow-info"><div class="srow-name">Nudge Frequency</div><div class="srow-desc">How often nudges are delivered</div></div>
+              <select class="sselect" onchange="showToast('Frequency updated')">
+                <option selected>Normal (real-time)</option>
+                <option>Gentle (max 3/hr)</option>
+                <option>Critical Only</option>
+              </select>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>SMART HOME ALERTS</div>
+            <div class="srow">
+              <div class="srow-icon">🏠</div>
+              <div class="srow-info"><div class="srow-name">Device Status Changes</div><div class="srow-desc">Lights, locks, thermostat events</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">⚡</div>
+              <div class="srow-info"><div class="srow-name">Energy Spike Alerts</div><div class="srow-desc">Unusual power consumption nudges</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🔐</div>
+              <div class="srow-info"><div class="srow-name">Security Events</div><div class="srow-desc">Door unlock, motion sensor triggers</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── DASHBOARD ── -->
+        <div class="panel" id="panel-dashboard">
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>DASHBOARD WIDGETS</div>
+            <div class="srow">
+              <div class="srow-icon">🧠</div>
+              <div class="srow-info"><div class="srow-name">Cognitive Score</div><div class="srow-desc">Real-time score ring and trend sparkline</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🎯</div>
+              <div class="srow-info"><div class="srow-name">Focus Session Timer</div><div class="srow-desc">Active focus block countdown</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📅</div>
+              <div class="srow-info"><div class="srow-name">Next Meeting Banner</div><div class="srow-desc">Upcoming calendar event at top of dashboard</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🏠</div>
+              <div class="srow-info"><div class="srow-name">Smart Home Quick Controls</div><div class="srow-desc">Device toggles on dashboard</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🔗</div>
+              <div class="srow-info"><div class="srow-name">Integration Status Row</div><div class="srow-desc">Show live sync status of top integrations</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🔔</div>
+              <div class="srow-info"><div class="srow-name">Active Nudges Panel</div><div class="srow-desc">Latest nudges preview on dashboard</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>COGNITIVE SCORE</div>
+            <div class="srow">
+              <div class="srow-icon">⚖️</div>
+              <div class="srow-info"><div class="srow-name">Score Algorithm</div><div class="srow-desc">Weighting model for cognitive score</div></div>
+              <select class="sselect" onchange="showToast('Algorithm updated')">
+                <option selected>Balanced</option>
+                <option>Focus-heavy</option>
+                <option>Health-weighted</option>
+                <option>Custom</option>
+              </select>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">❤️</div>
+              <div class="srow-info"><div class="srow-name">Include Health Data</div><div class="srow-desc">Use Samsung Health sleep &amp; stress in score</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📊</div>
+              <div class="srow-info"><div class="srow-name">Show Score History</div><div class="srow-desc">Keep 30-day trend on Analytics</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── INTEGRATION PERMISSIONS ── -->
+        <div class="panel" id="panel-integrations">
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-title"><div class="card-title-dot"></div>PER-INTEGRATION ACCESS CONTROL</div>
+            <p style="font-size:12px;color:var(--text-muted);line-height:1.6">Toggle individual permission scopes for each connected service. Removing a scope takes effect immediately — the token is re-scoped inside the Samsung Knox Secure Enclave without requiring re-authentication.</p>
+          </div>
+
+          <!-- Gmail -->
+          <div class="int-perm-card" id="perms-gmail">
+            <div class="int-perm-header">
+              <div class="int-perm-logo" style="background:#1a0a0a">📧</div>
+              <div>
+                <div class="int-perm-name">Gmail</div>
+                <div class="int-perm-status" id="status-gmail" style="color:var(--green)">● Connected</div>
+              </div>
+            </div>
+            <div class="perm-scopes">
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read emails</div><div class="scope-desc">Scan inbox for deadlines and action items</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Send emails</div><div class="scope-desc">Allow Meridian to send emails on your behalf</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read labels &amp; folders</div><div class="scope-desc">Organize email categories for context detection</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Manage labels</div><div class="scope-desc">Create and apply labels automatically</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Delete emails</div><div class="scope-desc">Permanently delete messages (not recommended)</div></div>
+                <span class="scope-tag admin">ADMIN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Google Calendar -->
+          <div class="int-perm-card" id="perms-gcal">
+            <div class="int-perm-header">
+              <div class="int-perm-logo" style="background:#0a1a0a">📅</div>
+              <div>
+                <div class="int-perm-name">Google Calendar</div>
+                <div class="int-perm-status" id="status-gcal" style="color:var(--green)">● Connected</div>
+              </div>
+            </div>
+            <div class="perm-scopes">
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read events</div><div class="scope-desc">View upcoming calendar events for context</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Create events</div><div class="scope-desc">Push deadline-derived tasks to calendar</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Edit &amp; delete events</div><div class="scope-desc">Modify or remove existing calendar entries</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Manage calendar settings</div><div class="scope-desc">Modify calendar-level preferences</div></div>
+                <span class="scope-tag admin">ADMIN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- GitHub -->
+          <div class="int-perm-card" id="perms-github">
+            <div class="int-perm-header">
+              <div class="int-perm-logo" style="background:#0d0d18">🐙</div>
+              <div>
+                <div class="int-perm-name">GitHub</div>
+                <div class="int-perm-status" id="status-github" style="color:var(--green)">● Connected</div>
+              </div>
+            </div>
+            <div class="perm-scopes">
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read repositories</div><div class="scope-desc">List repos, commits, PR status</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read pull requests</div><div class="scope-desc">Track open reviews and merge requests</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Write pull requests</div><div class="scope-desc">Comment or update PRs on your behalf</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Read &amp; write issues</div><div class="scope-desc">Track and create GitHub issues</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Admin: repo &amp; org</div><div class="scope-desc">Full repository administration access</div></div>
+                <span class="scope-tag admin">ADMIN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notion -->
+          <div class="int-perm-card" id="perms-notion">
+            <div class="int-perm-header">
+              <div class="int-perm-logo" style="background:#111520">📓</div>
+              <div>
+                <div class="int-perm-name">Notion</div>
+                <div class="int-perm-status" id="status-notion" style="color:var(--green)">● Connected</div>
+              </div>
+            </div>
+            <div class="perm-scopes">
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read pages &amp; databases</div><div class="scope-desc">Access task lists and project boards</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read comments</div><div class="scope-desc">Scan page comments for action items</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Create &amp; edit pages</div><div class="scope-desc">Let Meridian write notes or summaries</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slack -->
+          <div class="int-perm-card" id="perms-slack">
+            <div class="int-perm-header">
+              <div class="int-perm-logo" style="background:#0f1520">💬</div>
+              <div>
+                <div class="int-perm-name">Slack</div>
+                <div class="int-perm-status" id="status-slack" style="color:var(--green)">● Connected</div>
+              </div>
+            </div>
+            <div class="perm-scopes">
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read messages (DMs &amp; mentions)</div><div class="scope-desc">Track unread pings for nudges</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Manage Do Not Disturb</div><div class="scope-desc">Ghost Layer controls your Slack DND status</div></div>
+                <span class="scope-tag execute">EXECUTE</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Post messages</div><div class="scope-desc">Send status updates or reminders via Meridian</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Read channel history</div><div class="scope-desc">Full channel message access</div></div>
+                <span class="scope-tag admin">ADMIN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SmartThings -->
+          <div class="int-perm-card" id="perms-smartthings">
+            <div class="int-perm-header">
+              <div class="int-perm-logo" style="background:#001220">🏠</div>
+              <div>
+                <div class="int-perm-name">Samsung SmartThings</div>
+                <div class="int-perm-status" id="status-smartthings" style="color:var(--green)">● Connected</div>
+              </div>
+            </div>
+            <div class="perm-scopes">
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read device status</div><div class="scope-desc">View state of all smart home devices</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Control devices</div><div class="scope-desc">Turn on/off lights, adjust thermostat, lock doors</div></div>
+                <span class="scope-tag execute">EXECUTE</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read energy data</div><div class="scope-desc">Monitor consumption for energy nudges</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Manage routines &amp; automations</div><div class="scope-desc">Create or modify SmartThings automations</div></div>
+                <span class="scope-tag admin">ADMIN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Samsung Health -->
+          <div class="int-perm-card" id="perms-shealth">
+            <div class="int-perm-header">
+              <div class="int-perm-logo" style="background:#140d1e">❤️</div>
+              <div>
+                <div class="int-perm-name">Samsung Health</div>
+                <div class="int-perm-status" id="status-shealth" style="color:var(--green)">● Connected</div>
+              </div>
+            </div>
+            <div class="perm-scopes">
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read sleep data</div><div class="scope-desc">Sleep score influences morning cognitive baseline</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read stress &amp; heart rate</div><div class="scope-desc">Real-time stress signals for adaptive nudges</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope on" onclick="toggleScope(this)">
+                <div class="scope-check">✓</div>
+                <div class="scope-info"><div class="scope-name">Read steps &amp; activity</div><div class="scope-desc">Movement patterns used in break suggestions</div></div>
+                <span class="scope-tag read">READ</span>
+              </div>
+              <div class="perm-scope" onclick="toggleScope(this)">
+                <div class="scope-check"></div>
+                <div class="scope-info"><div class="scope-name">Write health goals</div><div class="scope-desc">Let Meridian set daily step and activity goals</div></div>
+                <span class="scope-tag write">WRITE</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:4px;padding:12px 16px;background:var(--purple-dim);border:1px solid rgba(124,58,237,0.3);border-radius:8px;font-size:11px;color:#c4b5fd;line-height:1.6">
+            🛡️ <strong>Knox Secure Enclave:</strong> All scope changes are applied in-memory inside the TrustZone. No permission data is written to disk or transmitted to external servers.
+          </div>
+        </div>
+
+        <!-- ── PRIVACY & GHOST LAYER ── -->
+        <div class="panel" id="panel-privacy">
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot" style="background:var(--purple);box-shadow:0 0 6px var(--purple)"></div>GHOST LAYER</div>
+            <div class="srow">
+              <div class="srow-icon">🛡️</div>
+              <div class="srow-info"><div class="srow-name">Ghost Layer Default State</div><div class="srow-desc">Activate Ghost Layer automatically on startup</div></div>
+              <div class="stoggle" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📄</div>
+              <div class="srow-info"><div class="srow-name">Blur Sensitive Documents</div><div class="srow-desc">Blur document previews when Ghost Layer is active</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">💬</div>
+              <div class="srow-info"><div class="srow-name">Block Message Previews</div><div class="srow-desc">Hide notification content in Ghost Layer mode</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📍</div>
+              <div class="srow-info"><div class="srow-name">Mask Location Data</div><div class="srow-desc">Spoof GPS coordinates for privacy</div></div>
+              <div class="stoggle" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📷</div>
+              <div class="srow-info"><div class="srow-name">Block Camera Access</div><div class="srow-desc">Hardware-level camera disable via Knox</div></div>
+              <div class="stoggle" onclick="toggleSetting(this)"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>AUDIT LOG</div>
+            <div class="srow">
+              <div class="srow-icon">📋</div>
+              <div class="srow-info"><div class="srow-name">Log All Permission Events</div><div class="srow-desc">Record every permission grant/revoke in audit log</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🗓️</div>
+              <div class="srow-info"><div class="srow-name">Log Retention</div><div class="srow-desc">How long to keep audit entries</div></div>
+              <select class="sselect" onchange="showToast('Retention updated')">
+                <option>7 days</option>
+                <option selected>30 days</option>
+                <option>90 days</option>
+                <option>Forever</option>
+              </select>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🗑️</div>
+              <div class="srow-info"><div class="srow-name">Clear Audit Log</div><div class="srow-desc">Permanently delete all stored audit entries</div></div>
+              <button class="btn btn-red" style="font-size:11px;padding:6px 14px" onclick="if(confirm('Clear all audit log entries?')){showToast('🗑️ Audit log cleared')}">Clear Log</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── KNOX & SECURITY ── -->
+        <div class="panel" id="panel-security">
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot" style="background:var(--purple);box-shadow:0 0 6px var(--purple)"></div>SAMSUNG KNOX STATUS</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+              <div style="padding:14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;text-align:center">
+                <div style="font-size:22px;margin-bottom:4px">🔐</div>
+                <div style="font-size:9px;letter-spacing:2px;color:var(--text-muted)">TRUST ZONE</div>
+                <div style="font-size:12px;color:var(--green);margin-top:2px">Active</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;text-align:center">
+                <div style="font-size:22px;margin-bottom:4px">🔑</div>
+                <div style="font-size:9px;letter-spacing:2px;color:var(--text-muted)">ENCRYPTION</div>
+                <div style="font-size:12px;color:#c4b5fd;margin-top:2px">AES-256-GCM</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;text-align:center">
+                <div style="font-size:22px;margin-bottom:4px">📵</div>
+                <div style="font-size:9px;letter-spacing:2px;color:var(--text-muted)">CLOUD SYNC</div>
+                <div style="font-size:12px;color:var(--green);margin-top:2px">Disabled</div>
+              </div>
+              <div style="padding:14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;text-align:center">
+                <div style="font-size:22px;margin-bottom:4px">✅</div>
+                <div style="font-size:9px;letter-spacing:2px;color:var(--text-muted)">COMPLIANCE</div>
+                <div style="font-size:12px;color:#c4b5fd;margin-top:2px">FIPS 140-2</div>
+              </div>
+            </div>
+            <div style="padding:10px 14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:var(--text-muted)">Last security audit</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green)">Today 06:00</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>SESSION &amp; ACCESS</div>
+            <div class="srow">
+              <div class="srow-icon">⏳</div>
+              <div class="srow-info"><div class="srow-name">Session Timeout</div><div class="srow-desc">Auto-logout after inactivity</div></div>
+              <select class="sselect" onchange="showToast('Session timeout updated')">
+                <option>15 minutes</option>
+                <option>30 minutes</option>
+                <option selected>1 hour</option>
+                <option>4 hours</option>
+                <option>Never</option>
+              </select>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🔢</div>
+              <div class="srow-info"><div class="srow-name">Require PIN on Resume</div><div class="srow-desc">Ask for PIN when returning from session timeout</div></div>
+              <div class="stoggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🕵️</div>
+              <div class="srow-info"><div class="srow-name">Biometric Unlock</div><div class="srow-desc">Use fingerprint / face ID via Knox</div></div>
+              <div class="stoggle" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📱</div>
+              <div class="srow-info"><div class="srow-name">Trusted Devices</div><div class="srow-desc">This Galaxy device is trusted</div></div>
+              <span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">Galaxy S24 Ultra ✓</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>DANGER ZONE</div>
+            <div class="srow">
+              <div class="srow-icon">🔐</div>
+              <div class="srow-info"><div class="srow-name">Revoke All Integration Tokens</div><div class="srow-desc">Disconnects all services immediately</div></div>
+              <button class="btn btn-red" style="font-size:11px;padding:6px 14px" onclick="if(confirm('Revoke all tokens?')){showToast('🔐 All tokens revoked from Knox Enclave')}">Revoke All</button>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🗑️</div>
+              <div class="srow-info"><div class="srow-name">Reset All Settings</div><div class="srow-desc">Restore factory defaults for all preferences</div></div>
+              <button class="btn btn-red" style="font-size:11px;padding:6px 14px" onclick="resetAll()">Reset All</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ADVANCED ── -->
+        <div class="panel" id="panel-advanced">
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>OPENCLAW ENGINE</div>
+            <div class="srow">
+              <div class="srow-icon">⚡</div>
+              <div class="srow-info"><div class="srow-name">Context Refresh Rate</div><div class="srow-desc">How often OpenCLAW re-evaluates your context</div></div>
+              <select class="sselect" onchange="showToast('Refresh rate updated')">
+                <option>Every 30s</option>
+                <option selected>Every 1 min</option>
+                <option>Every 5 min</option>
+                <option>Manual only</option>
+              </select>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🧪</div>
+              <div class="srow-info"><div class="srow-name">Experimental Features</div><div class="srow-desc">Enable beta OpenCLAW features (may be unstable)</div></div>
+              <div class="stoggle" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📝</div>
+              <div class="srow-info"><div class="srow-name">Debug Logging</div><div class="srow-desc">Write verbose logs to Knox-protected local store</div></div>
+              <div class="stoggle" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">💾</div>
+              <div class="srow-info"><div class="srow-name">Local Data Cache Size</div><div class="srow-desc" id="cacheLabel">256 MB</div></div>
+              <div style="width:140px">
+                <input type="range" class="sslider" min="64" max="1024" step="64" value="256" oninput="document.getElementById('cacheLabel').textContent=this.value+' MB'"/>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="card-title-dot"></div>DEVELOPER</div>
+            <div class="srow">
+              <div class="srow-icon">🛠️</div>
+              <div class="srow-info"><div class="srow-name">Developer Mode</div><div class="srow-desc">Exposes raw API payloads in activity feed</div></div>
+              <div class="stoggle" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">🔌</div>
+              <div class="srow-info"><div class="srow-name">Backend API URL</div><div class="srow-desc">Meridian backend endpoint</div></div>
+              <input class="sselect" value="http://localhost:3000" style="font-family:'JetBrains Mono',monospace;font-size:11px;min-width:180px"/>
+            </div>
+            <div class="srow">
+              <div class="srow-icon">📤</div>
+              <div class="srow-info"><div class="srow-name">Export All Settings</div><div class="srow-desc">Download settings as encrypted JSON</div></div>
+              <button class="btn btn-ghost" style="font-size:11px;padding:6px 14px" onclick="showToast('📤 Settings exported to Downloads')">Export</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /right panels -->
+    </div><!-- /settings-layout -->
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // CLOCK
+  (function tick(){ document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false}); setTimeout(tick,1000); })();
+
+  // SESSION USER
+  try {
+    const s = JSON.parse(localStorage.getItem('meridian_session')||'null');
+    if (s && s.user) {
+      const av=document.getElementById('sideAvatar'), nm=document.getElementById('sideName'), rl=document.getElementById('sideRole');
+      if (av && s.user.initials) { av.textContent=s.user.initials; document.getElementById('profileAvatar').textContent=s.user.initials; }
+      if (nm && s.user.name)     { nm.textContent=s.user.name; document.getElementById('profileName').textContent=s.user.name; document.getElementById('inputName').value=s.user.name; }
+      if (rl && s.user.role)     { rl.textContent=s.user.role.toUpperCase(); document.getElementById('profileRole').textContent=s.user.role.toUpperCase(); document.getElementById('inputRole').value=s.user.role; }
+    }
+  } catch(_){}
+
+  // GHOST LAYER
+  (function(){
+    const pip = document.getElementById('ghostPip');
+    if (pip && localStorage.getItem('meridian_ghost_mode') === 'true') pip.classList.add('on');
+  })();
+  function togglePrivacySidebar(el) {
+    const pip = el.querySelector('.toggle-pip');
+    const isOn = pip.classList.toggle('on');
+    localStorage.setItem('meridian_ghost_mode', String(isOn));
+    showToast(isOn ? '🛡️ Ghost Layer ACTIVE' : '👁️ Ghost Layer OFF');
+  }
+
+  // TABS
+  function switchTab(id) {
+    document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('panel-' + id).classList.add('active');
+  }
+
+  // TOGGLE
+  function toggleSetting(el) {
+    el.classList.toggle('on');
+    showToast(el.classList.contains('on') ? '✓ Setting enabled' : '✕ Setting disabled');
+  }
+
+  // SCOPE TOGGLE
+  function toggleScope(el) {
+    const wasOn = el.classList.contains('on');
+    el.classList.toggle('on');
+    const cb = el.querySelector('.scope-check');
+    cb.textContent = el.classList.contains('on') ? '✓' : '';
+    showToast(el.classList.contains('on')
+      ? '✓ Permission granted: ' + el.querySelector('.scope-name').textContent
+      : '✕ Permission revoked: ' + el.querySelector('.scope-name').textContent
+    );
+  }
+
+  // PROFILE PREVIEW
+  function updatePreview() {
+    const name = document.getElementById('inputName').value;
+    const role = document.getElementById('inputRole').value;
+    const initials = document.getElementById('inputInitials').value;
+    document.getElementById('profileName').textContent = name || 'Name';
+    document.getElementById('profileRole').textContent = role.toUpperCase() || 'ROLE';
+    document.getElementById('profileAvatar').textContent = initials || '?';
+    document.getElementById('sideAvatar').textContent = initials || '?';
+    document.getElementById('sideName').textContent = name || 'Name';
+    document.getElementById('sideRole').textContent = role.toUpperCase() || 'ROLE';
+  }
+
+  // THEME DEFINITIONS — shared with app.js via localStorage key 'meridian_theme'
+  const THEMES = {
+    // ── DARK ──
+    'cyber-dark': {
+      '--bg-primary':'#040812','--bg-secondary':'#080f1e','--bg-card':'#0d1628','--bg-card2':'#0a1220',
+      '--bg-sidebar':'rgba(8,15,30,0.97)','--bg-topbar':'rgba(4,8,18,0.92)',
+      '--cyan':'#00d4ff','--cyan-dim':'#00d4ff22','--cyan-mid':'#00d4ff44',
+      '--border':'#1a2d4a','--text-primary':'#e8f4fd','--text-muted':'#6b8aad',
+      '--grid-color':'rgba(0,212,255,0.025)',
+    },
+    'midnight': {
+      '--bg-primary':'#0a0014','--bg-secondary':'#100020','--bg-card':'#1a0032','--bg-card2':'#130028',
+      '--bg-sidebar':'rgba(10,0,20,0.97)','--bg-topbar':'rgba(6,0,14,0.92)',
+      '--cyan':'#c084fc','--cyan-dim':'#c084fc22','--cyan-mid':'#c084fc44',
+      '--border':'#2d1a4a','--text-primary':'#f0e8fd','--text-muted':'#8b6aad',
+      '--grid-color':'rgba(192,132,252,0.025)',
+    },
+    'matrix': {
+      '--bg-primary':'#000d00','--bg-secondary':'#001400','--bg-card':'#001a00','--bg-card2':'#001200',
+      '--bg-sidebar':'rgba(0,10,0,0.97)','--bg-topbar':'rgba(0,6,0,0.92)',
+      '--cyan':'#00ff41','--cyan-dim':'#00ff4122','--cyan-mid':'#00ff4144',
+      '--border':'#0a2d0a','--text-primary':'#ccffcc','--text-muted':'#4a8a4a',
+      '--grid-color':'rgba(0,255,65,0.03)',
+    },
+    'slate': {
+      '--bg-primary':'#0f1117','--bg-secondary':'#161820','--bg-card':'#1c1e26','--bg-card2':'#181a22',
+      '--bg-sidebar':'rgba(15,17,23,0.97)','--bg-topbar':'rgba(10,12,18,0.92)',
+      '--cyan':'#60a5fa','--cyan-dim':'#60a5fa22','--cyan-mid':'#60a5fa44',
+      '--border':'#2a2d3a','--text-primary':'#e2e8f0','--text-muted':'#64748b',
+      '--grid-color':'rgba(96,165,250,0.025)',
+    },
+    'monochrome': {
+      '--bg-primary':'#111111','--bg-secondary':'#181818','--bg-card':'#1f1f1f','--bg-card2':'#191919',
+      '--bg-sidebar':'rgba(17,17,17,0.97)','--bg-topbar':'rgba(10,10,10,0.92)',
+      '--cyan':'#d4d4d4','--cyan-dim':'#d4d4d422','--cyan-mid':'#d4d4d444',
+      '--border':'#2e2e2e','--text-primary':'#f0f0f0','--text-muted':'#707070',
+      '--grid-color':'rgba(200,200,200,0.04)',
+    },
+    // ── WARM ──
+    'ember': {
+      '--bg-primary':'#100400','--bg-secondary':'#190600','--bg-card':'#2a0900','--bg-card2':'#200700',
+      '--bg-sidebar':'rgba(16,4,0,0.97)','--bg-topbar':'rgba(10,2,0,0.92)',
+      '--cyan':'#ff5500','--cyan-dim':'#ff550022','--cyan-mid':'#ff550044',
+      '--border':'#3d1500','--text-primary':'#ffe8d6','--text-muted':'#a05a3a',
+      '--grid-color':'rgba(255,85,0,0.03)',
+    },
+    'rosewood': {
+      '--bg-primary':'#120008','--bg-secondary':'#1c000f','--bg-card':'#260014','--bg-card2':'#1e000f',
+      '--bg-sidebar':'rgba(18,0,8,0.97)','--bg-topbar':'rgba(10,0,5,0.92)',
+      '--cyan':'#ff3d7f','--cyan-dim':'#ff3d7f22','--cyan-mid':'#ff3d7f44',
+      '--border':'#3d0020','--text-primary':'#ffe8f0','--text-muted':'#a05070',
+      '--grid-color':'rgba(255,61,127,0.025)',
+    },
+    'amber': {
+      '--bg-primary':'#0d0800','--bg-secondary':'#160d00','--bg-card':'#1e1200','--bg-card2':'#180f00',
+      '--bg-sidebar':'rgba(13,8,0,0.97)','--bg-topbar':'rgba(9,6,0,0.92)',
+      '--cyan':'#f59e0b','--cyan-dim':'#f59e0b22','--cyan-mid':'#f59e0b44',
+      '--border':'#3d2800','--text-primary':'#fff8e0','--text-muted':'#9a7020',
+      '--grid-color':'rgba(245,158,11,0.025)',
+    },
+    'solar': {
+      '--bg-primary':'#fdf8f0','--bg-secondary':'#f5f0e8','--bg-card':'#ffffff','--bg-card2':'#faf6f0',
+      '--bg-sidebar':'rgba(245,240,232,0.98)','--bg-topbar':'rgba(252,248,240,0.96)',
+      '--cyan':'#d97706','--cyan-dim':'#d9770618','--cyan-mid':'#d9770632',
+      '--border':'#e5d8c0','--text-primary':'#1a1208','--text-muted':'#8a7050',
+      '--grid-color':'rgba(0,0,0,0.05)',
+    },
+    // ── COOL ──
+    'ocean': {
+      '--bg-primary':'#001622','--bg-secondary':'#001e30','--bg-card':'#00263c','--bg-card2':'#001e30',
+      '--bg-sidebar':'rgba(0,22,34,0.97)','--bg-topbar':'rgba(0,14,22,0.92)',
+      '--cyan':'#00bcd4','--cyan-dim':'#00bcd422','--cyan-mid':'#00bcd444',
+      '--border':'#003d5c','--text-primary':'#e0f4ff','--text-muted':'#4a8aaa',
+      '--grid-color':'rgba(0,188,212,0.03)',
+    },
+    'forest': {
+      '--bg-primary':'#051205','--bg-secondary':'#081a08','--bg-card':'#0d240d','--bg-card2':'#0a1e0a',
+      '--bg-sidebar':'rgba(5,18,5,0.97)','--bg-topbar':'rgba(3,10,3,0.92)',
+      '--cyan':'#22c55e','--cyan-dim':'#22c55e22','--cyan-mid':'#22c55e44',
+      '--border':'#143d14','--text-primary':'#e0f8e0','--text-muted':'#4a8a5a',
+      '--grid-color':'rgba(34,197,94,0.025)',
+    },
+    'lilac': {
+      '--bg-primary':'#0e0818','--bg-secondary':'#140c22','--bg-card':'#1c1030','--bg-card2':'#160e28',
+      '--bg-sidebar':'rgba(14,8,24,0.97)','--bg-topbar':'rgba(9,5,16,0.92)',
+      '--cyan':'#a78bfa','--cyan-dim':'#a78bfa22','--cyan-mid':'#a78bfa44',
+      '--border':'#2d1a4a','--text-primary':'#f0ecff','--text-muted':'#7060a0',
+      '--grid-color':'rgba(167,139,250,0.025)',
+    },
+    'aurora': {
+      '--bg-primary':'#fdf4ff','--bg-secondary':'#f8ecff','--bg-card':'#ffffff','--bg-card2':'#faf0ff',
+      '--bg-sidebar':'rgba(248,236,255,0.98)','--bg-topbar':'rgba(252,244,255,0.96)',
+      '--cyan':'#9333ea','--cyan-dim':'#9333ea18','--cyan-mid':'#9333ea32',
+      '--border':'#e0c8f0','--text-primary':'#1e0a30','--text-muted':'#7c5a8a',
+      '--grid-color':'rgba(0,0,0,0.05)',
+    },
+    'breeze': {
+      '--bg-primary':'#f0f8ff','--bg-secondary':'#e8f4ff','--bg-card':'#ffffff','--bg-card2':'#f4f9ff',
+      '--bg-sidebar':'rgba(232,244,255,0.98)','--bg-topbar':'rgba(240,248,255,0.96)',
+      '--cyan':'#0284c7','--cyan-dim':'#0284c718','--cyan-mid':'#0284c732',
+      '--border':'#b8d8f0','--text-primary':'#0a1628','--text-muted':'#3a6080',
+      '--grid-color':'rgba(0,0,0,0.05)',
+    },
+  };
+
+  function applyTheme(id) {
+    const vars = THEMES[id];
+    if (!vars) return;
+    const root = document.documentElement;
+    Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+    // Persist so app.js restores on all other pages
+    localStorage.setItem('meridian_theme', id);
+    // Also store the full vars so app.js can apply without duplicating the map
+    localStorage.setItem('meridian_theme_vars', JSON.stringify(vars));
+  }
+
+  function setTheme(el, id) {
+    document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    applyTheme(id);
+    showToast('🎨 Theme applied: ' + el.querySelector('.theme-label').textContent);
+  }
+
+  // ── Live apply helpers ──
+  function applyClockFormat(val) {
+    localStorage.setItem('meridian_clock_format', val);
+    // Restart the global clock so all clock elements update immediately
+    if (window.MERIDIAN && window.MERIDIAN.Clock) {
+      window.MERIDIAN.Clock.stop();
+      window.MERIDIAN.Clock.start();
+    }
+    showToast('Clock format set to ' + (val === '12' ? '12-hour (AM/PM)' : '24-hour'));
+  }
+
+  function applyFontSize(val, toast = true) {
+    localStorage.setItem('meridian_font_size', val);
+    document.documentElement.style.setProperty('font-size', val + 'px');
+    if (toast) showToast('Font size set to ' + val + 'px');
+  }
+
+  // Restore saved theme + display settings on page load
+  (function(){
+    const saved = localStorage.getItem('meridian_theme') || 'cyber-dark';
+    applyTheme(saved);
+    const el = document.querySelector('.theme-swatch[data-theme="' + saved + '"]');
+    if (el) {
+      document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+    }
+    // Restore clock format select
+    const cf = localStorage.getItem('meridian_clock_format');
+    if (cf) {
+      const cfEl = document.getElementById('clockFormatSelect');
+      if (cfEl) cfEl.value = cf;
+    }
+    // Restore font size select
+    const fs = localStorage.getItem('meridian_font_size');
+    if (fs) {
+      const fsEl = document.getElementById('fontSizeSelect');
+      if (fsEl) fsEl.value = fs;
+      document.documentElement.style.setProperty('font-size', fs + 'px');
+    }
+  })();
+
+  // SAVE / RESET
+  function saveAll() {
+    // Re-persist theme vars so app.js can apply on every page
+    const current = localStorage.getItem('meridian_theme') || 'cyber-dark';
+    applyTheme(current);
+
+    // Save clock format + font size
+    const cf = document.getElementById('clockFormatSelect');
+    if (cf) localStorage.setItem('meridian_clock_format', cf.value);
+    const fs = document.getElementById('fontSizeSelect');
+    if (fs) { localStorage.setItem('meridian_font_size', fs.value); applyFontSize(fs.value, false); }
+
+    // Collect toggle states
+    const toggles = {};
+    document.querySelectorAll('.stoggle[data-id]').forEach(t => {
+      toggles[t.dataset.id] = t.classList.contains('on');
+    });
+    localStorage.setItem('meridian_settings_toggles', JSON.stringify(toggles));
+
+    showToast('✓ Settings saved — applied across all pages');
+  }
+  function resetAll() {
+    if (!confirm('Reset all settings to defaults?')) return;
+    localStorage.removeItem('meridian_theme');
+    localStorage.removeItem('meridian_theme_vars');
+    localStorage.removeItem('meridian_settings_toggles');
+    applyTheme('cyber-dark');
+    document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+    const def = document.querySelector('.theme-swatch[data-theme="cyber-dark"]');
+    if (def) def.classList.add('active');
+    showToast('↺ Settings reset to defaults');
+  }
+
+  // TOAST
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -59,7 +59,6 @@ const WorkResume = (() => {
     _restoreTaskStates();
     _injectWorkOutputSummary();
     _injectCalendarWidget();
-    _enhanceChatScan();
     _applyGhostEffects();
     _bindPersistencePatches();
     _bindKeyboardShortcuts();
@@ -258,6 +257,118 @@ const WorkResume = (() => {
       localStorage.setItem(CAL_KEY, JSON.stringify(evs));
     }
 
+    /* ── 2026 ANNUAL EVENTS (merged on every load, never overwrite user events) ── */
+    const ANNUAL_2026 = {
+      // January — Q1 Kickoff
+      '2026-01-05': [{ id:'y26-01a', time:'09:00', label:'Q1 Kickoff Meeting',        color:'cyan'   },
+                     { id:'y26-01b', time:'15:00', label:'Samsung SDK Onboarding',     color:'purple' }],
+      '2026-01-12': [{ id:'y26-01c', time:'11:00', label:'Security Audit Review',      color:'red'    }],
+      '2026-01-20': [{ id:'y26-01d', time:'10:00', label:'Sprint 1 Planning',          color:'green'  },
+                     { id:'y26-01e', time:'14:00', label:'Knox Integration Demo',      color:'cyan'   }],
+      '2026-01-28': [{ id:'y26-01f', time:'16:00', label:'January Wrap-up',           color:'yellow' }],
+
+      // February — Deep Sprint
+      '2026-02-03': [{ id:'y26-02a', time:'09:30', label:'Sprint 2 Kickoff',           color:'cyan'   }],
+      '2026-02-11': [{ id:'y26-02b', time:'11:00', label:'1:1 — Product Lead',         color:'purple' },
+                     { id:'y26-02c', time:'14:00', label:'SmartThings API Review',     color:'yellow' }],
+      '2026-02-18': [{ id:'y26-02d', time:'10:00', label:'PR Review — Knox Auth',      color:'green'  }],
+      '2026-02-25': [{ id:'y26-02e', time:'15:00', label:'Cognitive OS Architecture',  color:'cyan'   }],
+
+      // March — Mid-Quarter
+      '2026-03-02': [{ id:'y26-03a', time:'09:00', label:'Sprint 3 Planning',          color:'cyan'   },
+                     { id:'y26-03b', time:'14:00', label:'Dashboard Prototype Demo',   color:'green'  }],
+      '2026-03-10': [{ id:'y26-03c', time:'11:00', label:'Privacy Layer Code Review',  color:'purple' }],
+      '2026-03-18': [{ id:'y26-03d', time:'10:00', label:'Q1 Mid-Review',              color:'yellow' }],
+      '2026-03-25': [{ id:'y26-03e', time:'16:00', label:'Deadline — Sprint 3 ⚠️',    color:'red'    },
+                     { id:'y26-03f', time:'09:00', label:'Team Sync',                  color:'cyan'   }],
+
+      // April — Q1 Close
+      '2026-04-01': [{ id:'y26-04a', time:'10:00', label:'Q1 Review & Retro',          color:'cyan'   }],
+      '2026-04-08': [{ id:'y26-04b', time:'14:00', label:'Smart Home UI Demo',         color:'green'  },
+                     { id:'y26-04c', time:'16:00', label:'Deploy to Staging',          color:'red'    }],
+      '2026-04-15': [{ id:'y26-04d', time:'11:00', label:'Security Pen Test Review',   color:'purple' }],
+      '2026-04-22': [{ id:'y26-04e', time:'09:00', label:'Q2 Sprint Planning',         color:'cyan'   },
+                     { id:'y26-04f', time:'15:00', label:'1:1 — Engineering Lead',     color:'yellow' }],
+      '2026-04-29': [{ id:'y26-04g', time:'14:00', label:'April Deliverable ⚠️',      color:'red'    }],
+
+      // May — Hackathon Month (current)
+      '2026-05-01': [{ id:'y26-05a', time:'08:00', label:'Hackathon Prep Day',         color:'cyan'   },
+                     { id:'y26-05b', time:'14:00', label:'OpenCLAW Briefing',          color:'purple' }],
+      '2026-05-05': [{ id:'y26-05c', time:'09:00', label:'Stand-up',                   color:'cyan'   },
+                     { id:'y26-05d', time:'14:00', label:'Sprint Review',              color:'yellow' }],
+      '2026-05-06': [{ id:'y26-05e', time:'11:00', label:'1:1 with Lead',             color:'purple' }],
+      '2026-05-07': [{ id:'y26-05f', time:'10:00', label:'PR Review — MERIDIAN',      color:'green'  },
+                     { id:'y26-05g', time:'16:00', label:'Hackathon Submission ⚠️',   color:'red'    }],
+      '2026-05-08': [{ id:'y26-05h', time:'13:00', label:'Demo Day Rehearsal',         color:'cyan'   }],
+      '2026-05-12': [{ id:'y26-05i', time:'10:00', label:'Samsung OpenCLAW — Final',  color:'red'    }],
+      '2026-05-19': [{ id:'y26-05j', time:'09:00', label:'Post-Hackathon Review',      color:'yellow' }],
+      '2026-05-26': [{ id:'y26-05k', time:'14:00', label:'May Close — Sprint Retro',  color:'cyan'   }],
+
+      // June — Q2 Mid
+      '2026-06-03': [{ id:'y26-06a', time:'09:00', label:'Q2 Sprint Kickoff',          color:'cyan'   }],
+      '2026-06-10': [{ id:'y26-06b', time:'11:00', label:'Knox 3.0 Integration',       color:'purple' }],
+      '2026-06-17': [{ id:'y26-06c', time:'14:00', label:'Cognitive Score Algorithm',  color:'green'  },
+                     { id:'y26-06d', time:'16:00', label:'Code Freeze — v1.2',        color:'red'    }],
+      '2026-06-24': [{ id:'y26-06e', time:'10:00', label:'Mid-Year OKR Check-in',      color:'yellow' }],
+
+      // July — Summer Sprint
+      '2026-07-01': [{ id:'y26-07a', time:'09:00', label:'H2 Planning Session',        color:'cyan'   }],
+      '2026-07-08': [{ id:'y26-07b', time:'11:00', label:'Ghost Layer Privacy Audit',  color:'purple' }],
+      '2026-07-15': [{ id:'y26-07c', time:'14:00', label:'SmartThings SDK Update',     color:'yellow' }],
+      '2026-07-22': [{ id:'y26-07d', time:'10:00', label:'Cross-Device Sync Review',   color:'green'  }],
+      '2026-07-29': [{ id:'y26-07e', time:'16:00', label:'Q2 Close Deliverable ⚠️',   color:'red'    }],
+
+      // August — Product Build
+      '2026-08-05': [{ id:'y26-08a', time:'09:00', label:'Q3 Sprint Planning',         color:'cyan'   },
+                     { id:'y26-08b', time:'14:00', label:'UX Research Session',        color:'yellow' }],
+      '2026-08-12': [{ id:'y26-08c', time:'11:00', label:'Focus Score v2 Design',      color:'purple' }],
+      '2026-08-19': [{ id:'y26-08d', time:'10:00', label:'Backend API Milestone',      color:'green'  }],
+      '2026-08-26': [{ id:'y26-08e', time:'15:00', label:'August Demo Day',            color:'cyan'   }],
+
+      // September — Q3 Review
+      '2026-09-02': [{ id:'y26-09a', time:'09:00', label:'Sprint 8 Kickoff',           color:'cyan'   }],
+      '2026-09-09': [{ id:'y26-09b', time:'11:00', label:'Annual Security Review',     color:'red'    }],
+      '2026-09-16': [{ id:'y26-09c', time:'14:00', label:'Q3 Mid-Review',              color:'yellow' }],
+      '2026-09-23': [{ id:'y26-09d', time:'10:00', label:'Performance Benchmarks',     color:'green'  }],
+      '2026-09-30': [{ id:'y26-09e', time:'16:00', label:'Q3 Sprint Retro',            color:'cyan'   }],
+
+      // October — Q3 Close
+      '2026-10-07': [{ id:'y26-10a', time:'09:00', label:'Q4 Roadmap Planning',        color:'cyan'   },
+                     { id:'y26-10b', time:'14:00', label:'Samsung DevCon Prep',        color:'purple' }],
+      '2026-10-14': [{ id:'y26-10c', time:'11:00', label:'Cognitive OS v2 Design',     color:'green'  }],
+      '2026-10-21': [{ id:'y26-10d', time:'10:00', label:'Distraction Engine Review',  color:'yellow' }],
+      '2026-10-28': [{ id:'y26-10e', time:'15:00', label:'October Deliverable ⚠️',    color:'red'    }],
+
+      // November — Pre-Holiday Push
+      '2026-11-04': [{ id:'y26-11a', time:'09:00', label:'Sprint 10 Planning',         color:'cyan'   }],
+      '2026-11-11': [{ id:'y26-11b', time:'14:00', label:'Year-end Feature Freeze',    color:'red'    }],
+      '2026-11-18': [{ id:'y26-11c', time:'11:00', label:'Code Review — Year-end',     color:'purple' }],
+      '2026-11-25': [{ id:'y26-11d', time:'10:00', label:'Q4 Mid-Review',              color:'yellow' }],
+
+      // December — Wrap Up
+      '2026-12-02': [{ id:'y26-12a', time:'09:00', label:'Final Sprint Planning',      color:'cyan'   }],
+      '2026-12-09': [{ id:'y26-12b', time:'14:00', label:'Year-End OKR Review',        color:'yellow' }],
+      '2026-12-16': [{ id:'y26-12c', time:'11:00', label:'MERIDIAN v1.0 Release 🚀',  color:'green'  }],
+      '2026-12-22': [{ id:'y26-12d', time:'10:00', label:'Team Retrospective 2026',    color:'cyan'   }],
+      '2026-12-30': [{ id:'y26-12e', time:'15:00', label:'New Year Handoff',           color:'purple' }],
+    };
+
+    /* Merge annual events with any existing user events */
+    (function _mergeAnnualEvents() {
+      const existing = _loadEvents();
+      let changed = false;
+      for (const [dateKey, newEvs] of Object.entries(ANNUAL_2026)) {
+        const existingIds = (existing[dateKey] || []).map(e => e.id);
+        const toAdd = newEvs.filter(e => !existingIds.includes(e.id));
+        if (toAdd.length) {
+          existing[dateKey] = [...(existing[dateKey] || []), ...toAdd];
+          changed = true;
+        }
+      }
+      if (changed) _saveEvents(existing);
+    })();
+
+    /* ── RELATIVE SEED (only on very first load, before any user data) ── */
     if (!localStorage.getItem(CAL_KEY)) {
       const seed = {};
       const d = (offset) => { const x = new Date(todayRef); x.setDate(x.getDate()+offset); return _ymd(x); };
@@ -1146,36 +1257,9 @@ const WorkResume = (() => {
        - Add a privacy overlay notice
   ───────────────────────────*/
   function _applyGhostEffects() {
-    const ghostOn   = localStorage.getItem(WORK_KEYS.GHOST) === 'true';
-    const msgAllowed = localStorage.getItem(WORK_KEYS.PERM_MSG) !== 'false';
-
-    if (ghostOn || !msgAllowed) {
-      // Find the connected apps card (contains Scan & Sync)
-      const appsCard = document.querySelector('.grid-2 .card:last-child');
-      if (!appsCard) return;
-
-      const scanSection = appsCard.querySelector('[style*="border-top"]');
-      if (scanSection && !scanSection.querySelector('.ghost-block-notice')) {
-        scanSection.style.position = 'relative';
-        scanSection.style.userSelect = 'none';
-
-        // Blur the content
-        const inner = scanSection.querySelector('[id="scanItems"]') || scanSection.lastElementChild;
-        if (inner) inner.style.filter = 'blur(4px)';
-
-        const notice = document.createElement('div');
-        notice.className = 'ghost-block-notice';
-        notice.style.cssText = `
-          position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-          background:rgba(4,8,18,0.7);border-radius:8px;flex-direction:column;gap:6px;
-          backdrop-filter:blur(2px);`;
-        notice.innerHTML = `
-          <span style="font-size:20px">🛡️</span>
-          <span style="font-size:11px;color:#7c3aed;letter-spacing:2px;font-family:'Orbitron',sans-serif">GHOST LAYER ACTIVE</span>
-          <span style="font-size:11px;color:var(--text-muted)">Chat scan blocked — message data hidden</span>`;
-        scanSection.appendChild(notice);
-      }
-    }
+    // Ghost state is handled reactively by _renderScanSync() in the inline script.
+    // Calling window._renderScanSync if available covers the initial load case too.
+    if (typeof window._renderScanSync === 'function') window._renderScanSync();
   }
 
   /* ─────────────────────────
@@ -1273,11 +1357,13 @@ const WorkResume = (() => {
 
     const item = document.createElement('div');
     item.className = 'task-item';
+    item.setAttribute('onclick', "toggleTask(this.querySelector('.task-check'))");
     item.innerHTML = `
-      <div class="task-check" onclick="toggleTask(this)"></div>
+      <div class="task-check"></div>
       <div class="task-text">${_sanitize(text)}</div>
       <span class="task-priority tp-medium">MED</span>
-      <span class="task-source">Manual</span>`;
+      <span class="task-source">Manual</span>
+      <span class="task-del" onclick="event.stopPropagation();deleteTask(this)" title="Delete task">✕</span>`;
     list.appendChild(item);
 
     if (typeof window.updateProgress === 'function') window.updateProgress();

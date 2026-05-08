@@ -220,10 +220,16 @@
     .scene-card {
       padding:14px 16px; border-radius:10px;
       border:1px solid var(--border); background:rgba(255,255,255,0.01);
-      cursor:pointer; transition:all 0.2s; text-align:center;
+      cursor:pointer; transition:all 0.2s; text-align:center; position:relative;
     }
     .scene-card:hover { border-color:var(--cyan); background:var(--cyan-dim); transform:translateY(-2px); }
     .scene-card.active { border-color:var(--green); background:var(--green-dim); }
+    .scene-active-badge {
+      display:none; position:absolute; top:7px; right:7px;
+      font-size:8px; letter-spacing:1.5px; padding:2px 6px; border-radius:10px;
+      background:var(--green-dim); border:1px solid var(--green); color:var(--green);
+    }
+    .scene-card.active .scene-active-badge { display:block; }
     .scene-icon { font-size:26px; margin-bottom:8px; }
     .scene-name { font-size:12px; font-weight:600; color:var(--text-primary); }
     .scene-desc { font-size:10px; color:var(--text-muted); margin-top:3px; }
@@ -257,13 +263,18 @@
     .tag-orange { background:var(--orange-dim); color:var(--orange); border-color:var(--orange); }
 
     /* ── ROUTINES ── */
-    .routine-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(26,45,74,0.4); }
+    .routine-row { display:flex; align-items:flex-start; justify-content:space-between; padding:13px 0; border-bottom:1px solid rgba(26,45,74,0.4); gap:10px; }
     .routine-row:last-child { border-bottom:none; }
-    .routine-info { display:flex; align-items:center; gap:10px; }
-    .routine-icon { font-size:20px; width:28px; text-align:center; }
+    .routine-info { display:flex; align-items:flex-start; gap:10px; flex:1; min-width:0; }
+    .routine-icon { font-size:20px; width:28px; text-align:center; flex-shrink:0; padding-top:2px; }
     .routine-name { font-size:13px; font-weight:500; color:var(--text-primary); }
-    .routine-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
-    .routine-toggle { width:38px; height:22px; background:#1a2d4a; border-radius:11px; position:relative; cursor:pointer; transition:background 0.3s; flex-shrink:0; }
+    .routine-desc { font-size:10px; color:var(--text-muted); margin-top:2px; }
+    .routine-pills { display:flex; align-items:center; gap:5px; margin-top:7px; flex-wrap:wrap; }
+    .rpill { font-size:9px; letter-spacing:1px; padding:2px 8px; border-radius:10px; border:1px solid; white-space:nowrap; }
+    .rpill-trigger { background:rgba(0,212,255,0.08); border-color:rgba(0,212,255,0.35); color:var(--cyan); }
+    .rpill-arrow  { color:var(--text-muted); font-size:9px; }
+    .rpill-action { background:rgba(0,255,136,0.08); border-color:rgba(0,255,136,0.35); color:var(--green); }
+    .routine-toggle { width:38px; height:22px; background:#1a2d4a; border-radius:11px; position:relative; cursor:pointer; transition:background 0.3s; flex-shrink:0; margin-top:2px; }
     .routine-toggle::after { content:''; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:var(--text-muted); transition:all 0.3s; }
     .routine-toggle.on { background:var(--green-dim); border:1px solid var(--green); }
     .routine-toggle.on::after { left:19px; background:var(--green); box-shadow:0 0 6px var(--green); }
@@ -328,11 +339,11 @@
     <a class="nav-item active" href="smarthome.html"><span class="nav-icon">🏠</span> Smart Home</a>
     <a class="nav-item" href="privacy.html"><span class="nav-icon">🔒</span> Privacy Mode</a>
     <div class="nav-section">Intelligence</div>
-    <a class="nav-item" href="#"><span class="nav-icon">📊</span> Analytics</a>
-    <a class="nav-item" href="#"><span class="nav-icon">🔔</span> Nudges <span class="nav-badge">3</span></a>
-    <a class="nav-item" href="#"><span class="nav-icon">🔗</span> Integrations</a>
+    <a class="nav-item" href="analytics.html"><span class="nav-icon">📊</span> Analytics</a>
+    <a class="nav-item" href="nudges.html"><span class="nav-icon">🔔</span> Nudges <span class="nav-badge">5</span></a>
+    <a class="nav-item" href="integrations.html"><span class="nav-icon">🔗</span> Integrations</a>
     <div class="nav-section">System</div>
-    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
     <a class="nav-item" href="index.html"><span class="nav-icon">⏏️</span> Logout</a>
   </nav>
   <div class="sidebar-bottom">
@@ -616,23 +627,28 @@
       <!-- Smart Scenes -->
       <div class="card" style="animation-delay:0.35s">
         <div class="card-label"><div class="card-label-dot"></div>SMART SCENES</div>
+        <div style="font-size:10px;color:var(--text-muted);margin:-4px 0 12px;letter-spacing:0.5px">Tap a scene to instantly apply settings to all devices</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="sceneGrid">
           <div class="scene-card active" id="scene-morning" onclick="activateScene('morning')">
+            <div class="scene-active-badge">ACTIVE</div>
             <div class="scene-icon">🌅</div>
             <div class="scene-name">Morning</div>
             <div class="scene-desc">Lights 80% · AC 24°C</div>
           </div>
           <div class="scene-card" id="scene-work" onclick="activateScene('work')">
+            <div class="scene-active-badge">ACTIVE</div>
             <div class="scene-icon">💻</div>
             <div class="scene-name">Work Mode</div>
             <div class="scene-desc">Cool light · TV off</div>
           </div>
           <div class="scene-card" id="scene-relax" onclick="activateScene('relax')">
+            <div class="scene-active-badge">ACTIVE</div>
             <div class="scene-icon">🛋️</div>
             <div class="scene-name">Relax</div>
             <div class="scene-desc">Warm light · AC 25°C</div>
           </div>
           <div class="scene-card" id="scene-sleep" onclick="activateScene('sleep')">
+            <div class="scene-active-badge">ACTIVE</div>
             <div class="scene-icon">🌙</div>
             <div class="scene-name">Sleep</div>
             <div class="scene-desc">All off · AC 22°C</div>
@@ -682,56 +698,83 @@
       <!-- Smart Routines -->
       <div class="card" style="animation-delay:0.45s">
         <div class="card-label"><div class="card-label-dot" style="background:var(--purple);box-shadow:0 0 6px var(--purple)"></div>SMART ROUTINES</div>
+        <div style="font-size:10px;color:var(--text-muted);margin:-4px 0 12px;letter-spacing:0.5px">Automated rules — run on schedule or smart trigger</div>
+
         <div class="routine-row">
           <div class="routine-info">
             <div class="routine-icon">🌅</div>
             <div>
               <div class="routine-name">Morning Routine</div>
-              <div class="routine-desc">7:00 AM · Lights on, AC 24°C</div>
+              <div class="routine-pills">
+                <span class="rpill rpill-trigger">⏰ 7:00 AM</span>
+                <span class="rpill-arrow">→</span>
+                <span class="rpill rpill-action">Lights on · AC 24°C</span>
+              </div>
             </div>
           </div>
           <div class="routine-toggle on" onclick="toggleRoutine(this)"></div>
         </div>
-        <div class="routine-row">
-          <div class="routine-info">
-            <div class="routine-icon">💼</div>
-            <div>
-              <div class="routine-name">Work Mode Trigger</div>
-              <div class="routine-desc">When focus score &gt; 70, dim lights</div>
-            </div>
-          </div>
-          <div class="routine-toggle on" onclick="toggleRoutine(this)"></div>
-        </div>
+
         <div class="routine-row">
           <div class="routine-info">
             <div class="routine-icon">📺</div>
             <div>
               <div class="routine-name">TV Usage Limit</div>
-              <div class="routine-desc">Auto-off after 3h of use</div>
+              <div class="routine-pills">
+                <span class="rpill rpill-trigger">⏱ 3h TV use</span>
+                <span class="rpill-arrow">→</span>
+                <span class="rpill rpill-action">Auto-off TV</span>
+              </div>
             </div>
           </div>
           <div class="routine-toggle on" onclick="toggleRoutine(this)"></div>
         </div>
+
         <div class="routine-row">
           <div class="routine-info">
-            <div class="routine-icon">🌙</div>
+            <div class="routine-icon">�</div>
+            <div>
+              <div class="routine-name">Evening Wind-Down</div>
+              <div class="routine-pills">
+                <span class="rpill rpill-trigger">⏰ After 8:00 PM</span>
+                <span class="rpill-arrow">→</span>
+                <span class="rpill rpill-action">Dim lights 40%</span>
+              </div>
+            </div>
+          </div>
+          <div class="routine-toggle on" onclick="toggleRoutine(this)"></div>
+        </div>
+
+        <div class="routine-row">
+          <div class="routine-info">
+            <div class="routine-icon">💤</div>
+            <div>
+              <div class="routine-name">Lights Out</div>
+              <div class="routine-pills">
+                <span class="rpill rpill-trigger">⏰ After 10:00 PM</span>
+                <span class="rpill-arrow">→</span>
+                <span class="rpill rpill-action">Lights off</span>
+              </div>
+            </div>
+          </div>
+          <div class="routine-toggle on" onclick="toggleRoutine(this)"></div>
+        </div>
+
+        <div class="routine-row">
+          <div class="routine-info">
+            <div class="routine-icon">�🌙</div>
             <div>
               <div class="routine-name">Sleep Routine</div>
-              <div class="routine-desc">11:00 PM · All devices off</div>
+              <div class="routine-pills">
+                <span class="rpill rpill-trigger">⏰ 11:00 PM</span>
+                <span class="rpill-arrow">→</span>
+                <span class="rpill rpill-action">All devices off</span>
+              </div>
             </div>
           </div>
           <div class="routine-toggle" onclick="toggleRoutine(this)"></div>
         </div>
-        <div class="routine-row">
-          <div class="routine-info">
-            <div class="routine-icon">🧠</div>
-            <div>
-              <div class="routine-name">Burnout Guard</div>
-              <div class="routine-desc">Meridian nudge → dim lights 50%</div>
-            </div>
-          </div>
-          <div class="routine-toggle on" onclick="toggleRoutine(this)"></div>
-        </div>
+
       </div>
     </div>
 
@@ -922,7 +965,9 @@
   function togglePrivacy() {
     const pip = document.getElementById('ghostPip');
     pip.classList.toggle('on');
-    showToast(pip.classList.contains('on') ? '🔒 Ghost Layer ACTIVE' : '👁️ Ghost Layer OFF');
+    const isOn = pip.classList.contains('on');
+    localStorage.setItem('meridian_ghost_mode', String(isOn));
+    showToast(isOn ? '🔒 Ghost Layer ACTIVE' : '👁️ Ghost Layer OFF');
   }
 
   // ── WASHER COUNTDOWN ──

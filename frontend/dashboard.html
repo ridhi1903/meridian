@@ -423,19 +423,19 @@
     </a>
 
     <div class="nav-section">Intelligence</div>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="analytics.html">
       <span class="nav-icon">📊</span> Analytics
     </a>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="nudges.html">
       <span class="nav-icon">🔔</span> Nudges
-      <span class="nav-badge">3</span>
+      <span class="nav-badge">5</span>
     </a>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="integrations.html">
       <span class="nav-icon">🔗</span> Integrations
     </a>
 
     <div class="nav-section">System</div>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="settings.html">
       <span class="nav-icon">⚙️</span> Settings
     </a>
     <a class="nav-item" href="index.html">
@@ -874,7 +874,9 @@
   function togglePrivacy(el) {
     const pip = document.getElementById('ghostPip');
     pip.classList.toggle('on');
-    if (pip.classList.contains('on')) {
+    const isOn = pip.classList.contains('on');
+    localStorage.setItem('meridian_ghost_mode', String(isOn));
+    if (isOn) {
       showToast('🔒 Ghost Layer ACTIVE — document content hidden');
     } else {
       showToast('👁️ Ghost Layer OFF — normal monitoring');

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MERIDIAN — Nudges</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --bg-primary:   #040812;
+      --bg-secondary: #080f1e;
+      --bg-card:      #0d1628;
+      --bg-card2:     #0a1220;
+      --cyan:         #00d4ff;
+      --cyan-dim:     #00d4ff22;
+      --cyan-mid:     #00d4ff44;
+      --green:        #00ff88;
+      --green-dim:    #00ff8822;
+      --yellow:       #ffd700;
+      --yellow-dim:   #ffd70022;
+      --red:          #ff4757;
+      --red-dim:      #ff475722;
+      --purple:       #7c3aed;
+      --purple-dim:   #7c3aed22;
+      --purple-mid:   #7c3aed55;
+      --text-primary: #e8f4fd;
+      --text-muted:   #6b8aad;
+      --border:       #1a2d4a;
+      --sidebar-w:    240px;
+    }
+
+    html, body { height:100%; background:var(--bg-primary); color:var(--text-primary); font-family:'Inter',sans-serif; overflow-x:hidden; }
+
+    /* ── GRID BG ── */
+    .grid-bg { position:fixed; inset:0; z-index:0; background-image: linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px); background-size:50px 50px; pointer-events:none; }
+
+    /* ── SCAN LINE ── */
+    .scanline { position:fixed; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); opacity:0.3; animation:scanDown 6s linear infinite; pointer-events:none; z-index:5; }
+    @keyframes scanDown { 0%{top:0;opacity:.4} 100%{top:100vh;opacity:0} }
+
+    /* ── SIDEBAR ── */
+    .sidebar { position:fixed; left:0; top:0; bottom:0; width:var(--sidebar-w); background:rgba(8,15,30,0.95); border-right:1px solid var(--border); backdrop-filter:blur(16px); z-index:100; display:flex; flex-direction:column; }
+    .sidebar-logo { padding:24px 20px 20px; border-bottom:1px solid var(--border); }
+    .sidebar-logo .logo-text { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900; letter-spacing:4px; background:linear-gradient(135deg,#fff,var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .sidebar-logo .logo-sub { font-size:10px; color:var(--text-muted); letter-spacing:2px; margin-top:2px; }
+    .user-badge { display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); }
+    .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--cyan),#7c3aed); display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:#040812; flex-shrink:0; }
+    .user-info .name { font-size:13px; font-weight:600; }
+    .user-info .role { font-size:10px; color:var(--cyan); letter-spacing:1px; }
+    .nav { flex:1; padding:16px 0; overflow-y:auto; }
+    .nav-section { padding:8px 20px 4px; font-size:9px; letter-spacing:3px; color:#2a3d55; text-transform:uppercase; }
+    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 20px; cursor:pointer; color:var(--text-muted); font-size:13px; transition:all 0.2s; text-decoration:none; position:relative; }
+    .nav-item:hover { color:var(--text-primary); background:rgba(0,212,255,0.04); }
+    .nav-item.active { color:var(--cyan); background:var(--cyan-dim); }
+    .nav-item.active::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--cyan); border-radius:0 2px 2px 0; }
+    .nav-icon { font-size:16px; width:20px; text-align:center; }
+    .nav-badge { margin-left:auto; padding:2px 7px; background:var(--red); border-radius:10px; font-size:10px; color:#fff; font-weight:600; }
+    .sidebar-bottom { padding:16px 20px; border-top:1px solid var(--border); }
+    .privacy-toggle-mini { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+    .toggle-pip { width:32px; height:18px; background:#1a2d4a; border-radius:10px; position:relative; }
+    .toggle-pip::after { content:''; position:absolute; top:3px; left:3px; width:12px; height:12px; border-radius:50%; background:var(--text-muted); transition:all 0.3s; }
+    .toggle-pip.on { background:var(--cyan-mid); }
+    .toggle-pip.on::after { left:17px; background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+
+    /* ── TOPBAR ── */
+    .topbar { position:fixed; top:0; left:var(--sidebar-w); right:0; height:60px; z-index:90; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:rgba(4,8,18,0.9); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+    .topbar-left .topbar-title { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:600; letter-spacing:3px; }
+    .topbar-left .topbar-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .topbar-right { display:flex; align-items:center; gap:16px; }
+    .topbar-clock { font-family:'Orbitron',sans-serif; font-size:13px; color:var(--cyan); letter-spacing:2px; }
+    .sys-dot { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); }
+    .pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--red); box-shadow:0 0 8px var(--red); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+
+    /* ── MAIN ── */
+    .main { margin-left:var(--sidebar-w); padding-top:60px; min-height:100vh; position:relative; z-index:10; }
+    .content { padding:24px 28px; }
+
+    /* ── PAGE HEADER ── */
+    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .page-header h1 { font-size:20px; font-weight:600; display:flex; align-items:center; gap:10px; }
+    .page-header p { font-size:13px; color:var(--text-muted); margin-top:4px; }
+
+    /* ── CARDS ── */
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px; position:relative; overflow:hidden; transition:border-color 0.3s; animation:fadeIn 0.4s ease both; }
+    .card:hover { border-color:#253d5a; }
+    .card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan-dim),transparent); }
+    .card-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--text-muted); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .card-label-dot { width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 6px var(--cyan); flex-shrink:0; }
+
+    /* ── GRIDS ── */
+    .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+    .grid-3-1 { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:20px; }
+    .mb-20 { margin-bottom:20px; }
+
+    /* ── STAT CARDS ── */
+    .stat-card { text-align:center; padding:18px 14px; }
+    .stat-icon { font-size:22px; margin-bottom:6px; }
+    .stat-value { font-family:'Orbitron',sans-serif; font-size:26px; font-weight:800; margin-bottom:4px; }
+    .stat-value.red    { color:var(--red); }
+    .stat-value.yellow { color:var(--yellow); }
+    .stat-value.green  { color:var(--green); }
+    .stat-value.muted  { color:var(--text-muted); }
+    .stat-label { font-size:10px; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase; }
+
+    /* ── NUDGE CARDS ── */
+    .nudge-card {
+      display:flex; align-items:flex-start; gap:16px;
+      padding:18px 20px; border-radius:12px;
+      border:1px solid var(--border); background:var(--bg-card2);
+      margin-bottom:10px; position:relative; overflow:hidden;
+      animation:fadeIn 0.4s ease both; transition:all 0.3s;
+    }
+    .nudge-card:hover { border-color:#253d5a; transform:translateX(2px); }
+    .nudge-card.priority-high::before   { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--red); border-radius:3px 0 0 3px; }
+    .nudge-card.priority-medium::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--yellow); border-radius:3px 0 0 3px; }
+    .nudge-card.priority-low::before    { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--green); border-radius:3px 0 0 3px; }
+    .nudge-card.dismissed { opacity:0; transform:translateX(30px); pointer-events:none; max-height:0; padding:0; margin:0; overflow:hidden; transition:all 0.4s ease; }
+
+    .nudge-icon { font-size:26px; flex-shrink:0; width:36px; text-align:center; margin-top:2px; }
+
+    .nudge-body { flex:1; }
+    .nudge-title { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+    .nudge-title strong { color:var(--yellow); }
+    .nudge-detail { font-size:11px; color:var(--text-muted); line-height:1.5; margin-bottom:8px; }
+    .nudge-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .nudge-time { font-size:10px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+    .nudge-source { font-size:10px; color:var(--text-muted); display:flex; align-items:center; gap:4px; }
+
+    .nudge-actions { display:flex; gap:8px; align-items:flex-start; flex-shrink:0; }
+    .ndg-btn { padding:6px 14px; border-radius:7px; font-size:11px; cursor:pointer; border:1px solid; font-family:'Inter',sans-serif; transition:all 0.2s; letter-spacing:0.5px; }
+    .ndg-btn-act { background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan); }
+    .ndg-btn-act:hover { background:var(--cyan); color:#040812; }
+    .ndg-btn-dismiss { background:transparent; border-color:var(--border); color:var(--text-muted); }
+    .ndg-btn-dismiss:hover { border-color:var(--red); color:var(--red); }
+
+    /* ── PRIORITY BADGE ── */
+    .priority-badge { padding:2px 8px; border-radius:10px; font-size:9px; letter-spacing:1.5px; border:1px solid; }
+    .pb-high   { background:var(--red-dim);    color:var(--red);    border-color:var(--red); }
+    .pb-medium { background:var(--yellow-dim); color:var(--yellow); border-color:var(--yellow); }
+    .pb-low    { background:var(--green-dim);  color:var(--green);  border-color:var(--green); }
+
+    /* ── CATEGORY TABS ── */
+    .cat-tabs { display:flex; gap:6px; margin-bottom:20px; }
+    .cat-tab { padding:7px 18px; border-radius:20px; font-size:11px; cursor:pointer; border:1px solid var(--border); color:var(--text-muted); background:transparent; font-family:'Inter',sans-serif; transition:all 0.2s; letter-spacing:0.5px; }
+    .cat-tab:hover { border-color:var(--text-muted); color:var(--text-primary); }
+    .cat-tab.active { background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state { text-align:center; padding:48px 20px; }
+    .empty-state-icon { font-size:40px; margin-bottom:12px; }
+    .empty-state-title { font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:3px; color:var(--text-muted); margin-bottom:8px; }
+    .empty-state-sub { font-size:12px; color:var(--text-muted); }
+
+    /* ── SETTINGS PANEL ── */
+    .setting-row { display:flex; align-items:center; gap:14px; padding:13px 0; border-bottom:1px solid rgba(26,45,74,0.5); }
+    .setting-row:last-child { border-bottom:none; }
+    .setting-icon { font-size:20px; width:30px; text-align:center; flex-shrink:0; }
+    .setting-info { flex:1; }
+    .setting-name { font-size:13px; font-weight:500; }
+    .setting-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .setting-toggle { width:40px; height:22px; border-radius:11px; background:#1a2d4a; border:1px solid var(--border); position:relative; cursor:pointer; transition:all 0.3s; flex-shrink:0; }
+    .setting-toggle::after { content:''; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:var(--text-muted); transition:all 0.3s; }
+    .setting-toggle.on { background:var(--cyan-dim); border-color:var(--cyan); }
+    .setting-toggle.on::after { left:21px; background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+
+    /* ── TAGS ── */
+    .tag { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:10px; letter-spacing:1px; border:1px solid; }
+    .tag-red    { background:var(--red-dim);    color:var(--red);    border-color:var(--red); }
+    .tag-yellow { background:var(--yellow-dim); color:var(--yellow); border-color:var(--yellow); }
+    .tag-cyan   { background:var(--cyan-dim);   color:var(--cyan);   border-color:var(--cyan); }
+    .tag-green  { background:var(--green-dim);  color:var(--green);  border-color:var(--green); }
+
+    /* ── BUTTONS ── */
+    .btn { padding:9px 18px; border-radius:7px; font-size:12px; cursor:pointer; border:1px solid; font-family:'Inter',sans-serif; transition:all 0.2s; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:6px; }
+    .btn-ghost { background:transparent; border-color:var(--border); color:var(--text-muted); }
+    .btn-ghost:hover { border-color:var(--text-muted); color:var(--text-primary); }
+    .btn-red { background:var(--red-dim); border-color:var(--red); color:var(--red); }
+    .btn-red:hover { background:var(--red); color:#fff; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:24px; right:28px; background:var(--bg-card); border:1px solid var(--cyan); border-radius:8px; padding:12px 20px; font-size:13px; color:var(--cyan); opacity:0; transform:translateY(10px); transition:all 0.3s; z-index:999; pointer-events:none; max-width:340px; }
+    .toast.show { opacity:1; transform:translateY(0); }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+  <script>
+    (function(){
+      try {
+        var s = JSON.parse(localStorage.getItem('meridian_session')||'null');
+        if (!s || Date.now() > s.expiresAt) { localStorage.removeItem('meridian_session'); window.location.replace('index.html'); }
+      } catch(e) { window.location.replace('index.html'); }
+    })();
+  </script>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="scanline"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">MERIDIAN</div>
+    <div class="logo-sub">COGNITIVE OS</div>
+  </div>
+  <div class="user-badge">
+    <div class="avatar" id="sideAvatar">AT</div>
+    <div class="user-info">
+      <div class="name" id="sideName">Anika Reddy</div>
+      <div class="role" id="sideRole">SECURITY ENGINEER</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🧠</span> Dashboard</a>
+    <a class="nav-item" href="work.html"><span class="nav-icon">💼</span> Work Resume</a>
+    <a class="nav-item" href="smarthome.html"><span class="nav-icon">🏠</span> Smart Home</a>
+    <a class="nav-item" href="privacy.html"><span class="nav-icon">🔒</span> Privacy Mode</a>
+    <div class="nav-section">Intelligence</div>
+    <a class="nav-item" href="analytics.html"><span class="nav-icon">📊</span> Analytics</a>
+    <a class="nav-item active" href="nudges.html"><span class="nav-icon">🔔</span> Nudges <span class="nav-badge" id="navBadge">5</span></a>
+    <a class="nav-item" href="integrations.html"><span class="nav-icon">🔗</span> Integrations</a>
+    <div class="nav-section">System</div>
+    <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="index.html"><span class="nav-icon">⏏️</span> Logout</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="privacy-toggle-mini" onclick="togglePrivacySidebar(this)">
+      <span style="font-size:11px;color:var(--text-muted);letter-spacing:1px;">GHOST LAYER</span>
+      <div class="toggle-pip" id="ghostPip"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">SMART NUDGES</div>
+    <div class="topbar-sub">Cognitive recommendations — powered by OpenCLAW Engine</div>
+  </div>
+  <div class="topbar-right">
+    <div class="sys-dot"><div class="pulse-dot"></div><span id="activeCount">5 active nudges</span></div>
+    <div class="topbar-clock" id="clock">00:00:00</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<main class="main">
+  <div class="content">
+
+    <!-- ── PAGE HEADER ── -->
+    <div class="page-header">
+      <div>
+        <h1>🔔 Smart Nudges <span class="tag tag-red" style="font-size:11px" id="headerBadge">5 ACTIVE</span></h1>
+        <p>Real-time cognitive recommendations from your Work and Personal life contexts</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" style="font-size:11px;padding:7px 16px" onclick="snoozeAll()">😴 Snooze All</button>
+        <button class="btn btn-red" style="font-size:11px;padding:7px 16px" onclick="dismissAll()">✕ Dismiss All</button>
+      </div>
+    </div>
+
+    <!-- ── KPI ROW ── -->
+    <div class="grid-4">
+      <div class="card stat-card" style="animation-delay:0.05s">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-value red" id="kpiHigh">3</div>
+        <div class="stat-label">High Priority</div>
+      </div>
+      <div class="card stat-card" style="animation-delay:0.1s">
+        <div class="stat-icon">🟡</div>
+        <div class="stat-value yellow" id="kpiMed">2</div>
+        <div class="stat-label">Medium Priority</div>
+      </div>
+      <div class="card stat-card" style="animation-delay:0.15s">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value green" id="kpiDismissed">7</div>
+        <div class="stat-label">Dismissed Today</div>
+      </div>
+      <div class="card stat-card" style="animation-delay:0.2s">
+        <div class="stat-icon">📅</div>
+        <div class="stat-value muted">10</div>
+        <div class="stat-label">Total This Week</div>
+      </div>
+    </div>
+
+    <!-- ── NUDGE LIST + SETTINGS ── -->
+    <div class="grid-3-1">
+
+      <!-- Nudge Feed -->
+      <div>
+        <!-- Category filter tabs -->
+        <div class="cat-tabs">
+          <button class="cat-tab active" onclick="filterNudges(this,'all')">All <span id="tabAll" style="margin-left:4px;opacity:0.7">(5)</span></button>
+          <button class="cat-tab" onclick="filterNudges(this,'work')">💼 Work</button>
+          <button class="cat-tab" onclick="filterNudges(this,'focus')">🧠 Focus</button>
+          <button class="cat-tab" onclick="filterNudges(this,'home')">🏠 Home</button>
+          <button class="cat-tab" onclick="filterNudges(this,'privacy')">🛡️ Privacy</button>
+        </div>
+
+        <!-- Active nudges -->
+        <div id="nudgeFeed">
+
+          <!-- NUDGE 1 — High, Focus -->
+          <div class="nudge-card priority-high" data-id="n1" data-cat="focus" style="animation-delay:0.1s">
+            <div class="nudge-icon">🔁</div>
+            <div class="nudge-body">
+              <div class="nudge-title">Distraction loop detected — <strong>Instagram → YouTube → News</strong> (×3)</div>
+              <div class="nudge-detail">You've cycled through these apps 3 times in the last 18 minutes. A context lock will help restore deep work flow.</div>
+              <div class="nudge-meta">
+                <span class="nudge-time">2 min ago</span>
+                <span class="priority-badge pb-high">HIGH</span>
+                <span class="nudge-source">📊 Loop Detector</span>
+              </div>
+            </div>
+            <div class="nudge-actions">
+              <button class="ndg-btn ndg-btn-act" onclick="actNudge(this,'n1','🚫 Context lock activated')">🚫 Lock Context</button>
+              <button class="ndg-btn ndg-btn-dismiss" onclick="dismissNudge('n1')">✕</button>
+            </div>
+          </div>
+
+          <!-- NUDGE 2 — High, Work -->
+          <div class="nudge-card priority-high" data-id="n2" data-cat="work" style="animation-delay:0.15s">
+            <div class="nudge-icon">📅</div>
+            <div class="nudge-body">
+              <div class="nudge-title">Deadline detected in Gmail: <strong>"submit by Friday"</strong></div>
+              <div class="nudge-detail">OpenCLAW scanned your inbox and found a deadline keyword. The task has been prepared — approve to add it to your Calendar.</div>
+              <div class="nudge-meta">
+                <span class="nudge-time">31 min ago</span>
+                <span class="priority-badge pb-high">HIGH</span>
+                <span class="nudge-source">📧 Gmail Scan & Sync</span>
+              </div>
+            </div>
+            <div class="nudge-actions">
+              <button class="ndg-btn ndg-btn-act" onclick="actNudge(this,'n2','📅 Task added to Calendar')">+ Add to Calendar</button>
+              <button class="ndg-btn ndg-btn-dismiss" onclick="dismissNudge('n2')">✕</button>
+            </div>
+          </div>
+
+          <!-- NUDGE 3 — Medium, Focus -->
+          <div class="nudge-card priority-medium" data-id="n3" data-cat="focus" style="animation-delay:0.2s">
+            <div class="nudge-icon">⏱️</div>
+            <div class="nudge-body">
+              <div class="nudge-title">You've been in deep flow for <strong>52 minutes</strong> — a short break will sustain peak performance</div>
+              <div class="nudge-detail">Research suggests a 5–10 minute break every 50 minutes helps maintain cognitive score above baseline. Your current score is 78.</div>
+              <div class="nudge-meta">
+                <span class="nudge-time">5 min ago</span>
+                <span class="priority-badge pb-medium">MEDIUM</span>
+                <span class="nudge-source">🧠 Focus Tracker</span>
+              </div>
+            </div>
+            <div class="nudge-actions">
+              <button class="ndg-btn ndg-btn-act" onclick="actNudge(this,'n3','⏱️ 5-min break timer started')">⏱ Start Break</button>
+              <button class="ndg-btn ndg-btn-dismiss" onclick="dismissNudge('n3')">✕</button>
+            </div>
+          </div>
+
+          <!-- NUDGE 4 — High, Privacy -->
+          <div class="nudge-card priority-high" data-id="n4" data-cat="privacy" style="animation-delay:0.25s">
+            <div class="nudge-icon">🛡️</div>
+            <div class="nudge-body">
+              <div class="nudge-title">New app <strong>"PhotoEdit Pro"</strong> requesting access to Location, Microphone &amp; Contacts</div>
+              <div class="nudge-detail">This app was installed 4 minutes ago and is requesting 3 sensitive permissions. Samsung Knox flagged unusual permission scope for a photo editor.</div>
+              <div class="nudge-meta">
+                <span class="nudge-time">4 min ago</span>
+                <span class="priority-badge pb-high">HIGH</span>
+                <span class="nudge-source">🛡️ Knox Sentinel</span>
+              </div>
+            </div>
+            <div class="nudge-actions">
+              <button class="ndg-btn ndg-btn-act" onclick="actNudge(this,'n4','🛡️ Permissions review opened')">Review Permissions</button>
+              <button class="ndg-btn ndg-btn-dismiss" onclick="dismissNudge('n4')">✕</button>
+            </div>
+          </div>
+
+          <!-- NUDGE 5 — Medium, Home -->
+          <div class="nudge-card priority-medium" data-id="n5" data-cat="home" style="animation-delay:0.3s">
+            <div class="nudge-icon">🌡️</div>
+            <div class="nudge-body">
+              <div class="nudge-title">Bedroom thermostat at <strong>24°C for 5h 40m</strong> — energy spike detected</div>
+              <div class="nudge-detail">Your average bedroom temperature is 21°C. Adjusting to optimal range will reduce energy usage by an estimated 18% today.</div>
+              <div class="nudge-meta">
+                <span class="nudge-time">12 min ago</span>
+                <span class="priority-badge pb-medium">MEDIUM</span>
+                <span class="nudge-source">🏠 Smart Home Monitor</span>
+              </div>
+            </div>
+            <div class="nudge-actions">
+              <button class="ndg-btn ndg-btn-act" onclick="actNudge(this,'n5','🌡️ Thermostat set to 21°C')">Set to 21°C</button>
+              <button class="ndg-btn ndg-btn-dismiss" onclick="dismissNudge('n5')">✕</button>
+            </div>
+          </div>
+
+        </div><!-- /nudgeFeed -->
+
+        <!-- Empty state (shown when all dismissed) -->
+        <div class="empty-state" id="emptyState" style="display:none">
+          <div class="empty-state-icon">🎉</div>
+          <div class="empty-state-title">ALL CAUGHT UP</div>
+          <div class="empty-state-sub">No active nudges right now. Meridian is watching — new nudges appear as your context changes.</div>
+        </div>
+
+        <!-- Dismissed history section -->
+        <div id="dismissedSection" style="margin-top:24px">
+          <div style="font-size:10px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+            <span>DISMISSED TODAY</span>
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+          </div>
+          <div id="dismissedFeed" style="opacity:0.5">
+            <div class="nudge-card" data-id="d1" style="margin-bottom:8px;animation-delay:0.35s">
+              <div class="nudge-icon" style="font-size:20px">☕</div>
+              <div class="nudge-body">
+                <div class="nudge-title" style="font-size:12px;color:var(--text-muted);text-decoration:line-through">Morning routine activated — Smart Home devices adjusted</div>
+                <div class="nudge-meta" style="margin-top:4px">
+                  <span class="nudge-time">08:12</span>
+                  <span class="priority-badge pb-low" style="font-size:8px">LOW</span>
+                </div>
+              </div>
+            </div>
+            <div class="nudge-card" data-id="d2" style="margin-bottom:8px;animation-delay:0.4s">
+              <div class="nudge-icon" style="font-size:20px">📺</div>
+              <div class="nudge-body">
+                <div class="nudge-title" style="font-size:12px;color:var(--text-muted);text-decoration:line-through">TV in living room on for 3h 20m — auto-off suggestion</div>
+                <div class="nudge-meta" style="margin-top:4px">
+                  <span class="nudge-time">11:45</span>
+                  <span class="priority-badge pb-medium" style="font-size:8px">MEDIUM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Panel -->
+      <div>
+        <div class="card mb-20" style="animation-delay:0.1s">
+          <div class="card-label"><div class="card-label-dot"></div>NUDGE SETTINGS</div>
+          <div>
+            <div class="setting-row">
+              <div class="setting-icon">🧠</div>
+              <div class="setting-info">
+                <div class="setting-name">Focus Nudges</div>
+                <div class="setting-desc">Break reminders, flow alerts</div>
+              </div>
+              <div class="setting-toggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-icon">📅</div>
+              <div class="setting-info">
+                <div class="setting-name">Deadline Detection</div>
+                <div class="setting-desc">Gmail scan → Calendar push</div>
+              </div>
+              <div class="setting-toggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-icon">🔁</div>
+              <div class="setting-info">
+                <div class="setting-name">Distraction Loop</div>
+                <div class="setting-desc">App loop detection alerts</div>
+              </div>
+              <div class="setting-toggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-icon">🏠</div>
+              <div class="setting-info">
+                <div class="setting-name">Smart Home Alerts</div>
+                <div class="setting-desc">Device usage, energy warnings</div>
+              </div>
+              <div class="setting-toggle on" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-icon">🛡️</div>
+              <div class="setting-info">
+                <div class="setting-name">Privacy Alerts</div>
+                <div class="setting-desc">Ghost Layer status changes</div>
+              </div>
+              <div class="setting-toggle on" onclick="toggleSetting(this)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nudge frequency -->
+        <div class="card" style="animation-delay:0.15s">
+          <div class="card-label"><div class="card-label-dot"></div>FREQUENCY</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;padding:8px;border-radius:7px;border:1px solid var(--cyan);background:var(--cyan-dim)" id="freq-normal">
+              <input type="radio" name="freq" value="normal" checked style="accent-color:var(--cyan)">
+              <div>
+                <div style="font-weight:500">Normal</div>
+                <div style="font-size:10px;color:var(--text-muted)">Real-time nudges</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;padding:8px;border-radius:7px;border:1px solid var(--border)" id="freq-gentle">
+              <input type="radio" name="freq" value="gentle" style="accent-color:var(--cyan)">
+              <div>
+                <div style="font-weight:500">Gentle</div>
+                <div style="font-size:10px;color:var(--text-muted)">Max 3 nudges/hour</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;padding:8px;border-radius:7px;border:1px solid var(--border)" id="freq-critical">
+              <input type="radio" name="freq" value="critical" style="accent-color:var(--cyan)">
+              <div>
+                <div style="font-weight:500">Critical Only</div>
+                <div style="font-size:10px;color:var(--text-muted)">High priority only</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── CLOCK ──
+  (function tick() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-US',{hour12:false});
+    setTimeout(tick,1000);
+  })();
+
+  // ── USER FROM SESSION ──
+  try {
+    const s = JSON.parse(localStorage.getItem('meridian_session')||'null');
+    if (s && s.user) {
+      const av = document.getElementById('sideAvatar');
+      const nm = document.getElementById('sideName');
+      const rl = document.getElementById('sideRole');
+      if (av && s.user.initials) av.textContent = s.user.initials;
+      if (nm && s.user.name)     nm.textContent = s.user.name;
+      if (rl && s.user.role)     rl.textContent = s.user.role.toUpperCase();
+    }
+  } catch(_){}
+
+  // ── GHOST LAYER ──
+  (function(){
+    const pip = document.getElementById('ghostPip');
+    if (!pip) return;
+    if (localStorage.getItem('meridian_ghost_mode') === 'true') pip.classList.add('on');
+  })();
+
+  function togglePrivacySidebar(el) {
+    const pip = el.querySelector('.toggle-pip');
+    const isOn = pip.classList.toggle('on');
+    localStorage.setItem('meridian_ghost_mode', String(isOn));
+    showToast(isOn ? '🛡️ Ghost Layer ACTIVE' : '👁️ Ghost Layer OFF');
+  }
+
+  // ── NUDGE STATE ──
+  let activeNudges = new Set(['n1','n2','n3','n4','n5']);
+
+  function updateCounts() {
+    const n = activeNudges.size;
+    // Persist live count so every other page badge stays in sync
+    localStorage.setItem('meridian_nudge_count', String(n));
+    document.getElementById('navBadge').textContent = n > 0 ? n : '';
+    document.getElementById('navBadge').style.display = n > 0 ? 'inline-block' : 'none';
+    document.getElementById('activeCount').textContent = n + ' active nudge' + (n !== 1 ? 's' : '');
+    document.getElementById('headerBadge').textContent = n + ' ACTIVE';
+    document.getElementById('headerBadge').className = n > 0 ? 'tag tag-red' : 'tag tag-green';
+    if (n === 0) document.getElementById('headerBadge').textContent = 'ALL CLEAR';
+
+    // KPI
+    const cards = document.querySelectorAll('#nudgeFeed .nudge-card:not(.dismissed)');
+    let high=0, med=0;
+    cards.forEach(c => {
+      if (c.classList.contains('priority-high'))   high++;
+      if (c.classList.contains('priority-medium')) med++;
+    });
+    document.getElementById('kpiHigh').textContent = high;
+    document.getElementById('kpiMed').textContent  = med;
+
+    // Tab count
+    document.getElementById('tabAll').textContent = '(' + n + ')';
+
+    // Empty state
+    document.getElementById('emptyState').style.display = n === 0 ? 'block' : 'none';
+  }
+
+  // Priority label helpers
+  const PRIORITY_CLASS = { 'priority-high':'pb-high', 'priority-medium':'pb-medium', 'priority-low':'pb-low' };
+  const PRIORITY_LABEL = { 'priority-high':'HIGH', 'priority-medium':'MEDIUM', 'priority-low':'LOW' };
+
+  function dismissNudge(id) {
+    const card = document.querySelector('#nudgeFeed [data-id="' + id + '"]');
+    if (!card || !activeNudges.has(id)) return;
+
+    // Grab display info before animating out
+    const icon  = card.querySelector('.nudge-icon') ? card.querySelector('.nudge-icon').textContent.trim() : '🔔';
+    const title = card.querySelector('.nudge-title') ? card.querySelector('.nudge-title').textContent.trim() : id;
+    const time  = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+    let prioClass = 'pb-low', prioLabel = 'LOW';
+    ['priority-high','priority-medium','priority-low'].forEach(cls => {
+      if (card.classList.contains(cls)) { prioClass = PRIORITY_CLASS[cls]; prioLabel = PRIORITY_LABEL[cls]; }
+    });
+
+    // Animate card out
+    card.classList.add('dismissed');
+    activeNudges.delete(id);
+
+    // Update dismissed counter
+    const d = parseInt(document.getElementById('kpiDismissed').textContent) || 0;
+    document.getElementById('kpiDismissed').textContent = d + 1;
+
+    // Inject into dismissed feed after animation
+    setTimeout(() => {
+      card.remove();
+      const feed = document.getElementById('dismissedFeed');
+      const entry = document.createElement('div');
+      entry.className = 'nudge-card';
+      entry.style.cssText = 'margin-bottom:8px;opacity:0;transition:opacity 0.35s;';
+      entry.innerHTML =
+        '<div class="nudge-icon" style="font-size:20px">' + icon + '</div>' +
+        '<div class="nudge-body">' +
+          '<div class="nudge-title" style="font-size:12px;color:var(--text-muted);text-decoration:line-through">' + title + '</div>' +
+          '<div class="nudge-meta" style="margin-top:4px">' +
+            '<span class="nudge-time">' + time + '</span>' +
+            '<span class="priority-badge ' + prioClass + '" style="font-size:8px">' + prioLabel + '</span>' +
+          '</div>' +
+        '</div>';
+      feed.insertBefore(entry, feed.firstChild);
+      // Fade in
+      requestAnimationFrame(() => requestAnimationFrame(() => { entry.style.opacity = '1'; }));
+      updateCounts();
+    }, 420);
+
+    showToast('✓ Nudge dismissed');
+  }
+
+  function actNudge(btn, id, msg) {
+    btn.textContent = '✓ Done';
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    showToast(msg);
+    setTimeout(() => dismissNudge(id), 800);
+  }
+
+  function dismissAll() {
+    if (!confirm('Dismiss all active nudges?')) return;
+    // Copy ids before mutating the set
+    const ids = [...activeNudges];
+    ids.forEach(id => dismissNudge(id));
+    showToast('✓ All nudges dismissed');
+  }
+
+  function snoozeAll() {
+    showToast('😴 All nudges snoozed for 30 minutes');
+  }
+
+  // ── CATEGORY FILTER ──
+  function filterNudges(btn, cat) {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#nudgeFeed .nudge-card').forEach(card => {
+      if (card.classList.contains('dismissed')) return;
+      const cardCat = card.dataset.cat;
+      card.style.display = (cat === 'all' || cardCat === cat) ? 'flex' : 'none';
+    });
+  }
+
+  // ── SETTINGS TOGGLE ──
+  function toggleSetting(el) {
+    el.classList.toggle('on');
+    showToast(el.classList.contains('on') ? '✓ Nudge type enabled' : '✕ Nudge type disabled');
+  }
+
+  // ── FREQ RADIO STYLING ──
+  document.querySelectorAll('input[name="freq"]').forEach(r => {
+    r.addEventListener('change', function() {
+      document.querySelectorAll('input[name="freq"]').forEach(o => {
+        o.parentElement.style.borderColor = 'var(--border)';
+        o.parentElement.style.background  = 'transparent';
+      });
+      this.parentElement.style.borderColor = 'var(--cyan)';
+      this.parentElement.style.background  = 'var(--cyan-dim)';
+      showToast('⚙️ Nudge frequency set to ' + this.value);
+    });
+  });
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // Init
+  updateCounts();
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>
