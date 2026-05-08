@@ -125,7 +125,7 @@ meridian/
 - 4 context stats: Deep Work time, Last PR, TODOs left, Context % saved
 
 **Task Management:**
-- Task list (7/10 done) with priority badges (HIGH/MED/LOW) and source tags (VS Code, GitHub, WhatsApp)
+- Task list (7/10 done) with priority badges (HIGH/MED/LOW) and source tags (VS Code, GitHub, Slack)
 - Click to toggle task done/undone
 - Progress bar + percentage counter
 
@@ -138,15 +138,15 @@ meridian/
 - Animated session duration bars
 
 **Connected Apps:**
-- GitHub, Slack, Notion, WhatsApp, Calendar, Gmail
+- GitHub, Slack, Notion, Calendar, Gmail
 - Connection status badges
-- Scan & Sync panel showing detected deadline from WhatsApp ("Submit by Friday")
+- Scan & Sync panel showing detected deadline from Gmail ("Submit by Friday")
 - "Add to Calendar" button
 
 **⚠️ MISSING from work.html (needs to be added):**
 1. **Weekly Calendar view** — no calendar UI exists yet
 2. **Work Output Summary** — no "wrote 3 Word docs, 2 spreadsheets" section
-3. **Full chat scan UI** — only 1 hardcoded WhatsApp item; needs a full scan panel
+3. **Full chat scan UI** — only 1 hardcoded Gmail item; needs a full scan panel
 
 **`work.js` — EMPTY, needs:**
 - Task toggle with progress recalculation
@@ -244,7 +244,7 @@ meridian/
 - Persists ghost state to `meridian_ghost_mode`
 - Persists perms: `meridian_perm_doc`, `meridian_perm_msg`, `meridian_perm_loc`, `meridian_perm_camera`
 - Annotates permission rows with domain labels (WORK LIFE / PERSONAL LIFE)
-- Live audit event feed — alternates work events (VS Code, Notion, WhatsApp scan) and personal events (TV, camera, location) every 12–28 seconds
+- Live audit event feed — alternates work events (VS Code, Notion, Gmail scan) and personal events (TV, camera, location) every 12–28 seconds
 - Ghost-aware audit: work events show as BLOCKED when Ghost is ON
 - Audit log persisted to `meridian_audit_log` in localStorage
 - Patches inline `masterToggle()`, `togglePerm()`, `clearLog()` to add persistence

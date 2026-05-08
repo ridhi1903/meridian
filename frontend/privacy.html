@@ -354,6 +354,79 @@
     /* ── GHOST MODE PARTICLES ── */
     #ghostCanvas { position:fixed; inset:0; z-index:1; opacity:0; transition:opacity 1.5s; pointer-events:none; }
     #ghostCanvas.show { opacity:0.35; }
+
+    /* ── SCAN BEAM (reading mode) ── */
+    .scan-beam {
+      position:absolute; left:0; right:0; height:2px; z-index:2;
+      background:linear-gradient(90deg,transparent,rgba(0,212,255,0.45),transparent);
+      animation:scanBeam 3.5s linear infinite; pointer-events:none;
+    }
+    .scan-beam.hidden { display:none; }
+    @keyframes scanBeam {
+      0%   { top:0;    opacity:0.7; }
+      80%  { top:100%; opacity:0.15; }
+      100% { top:100%; opacity:0; }
+    }
+
+    /* ── CLASSIFIED WATERMARK ── */
+    .doc-body.classified::after {
+      content:'CLASSIFIED';
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%) rotate(-22deg);
+      font-family:'Orbitron',sans-serif; font-size:26px; font-weight:900; letter-spacing:7px;
+      color:rgba(124,58,237,0.13); pointer-events:none; white-space:nowrap; z-index:0;
+      text-shadow:0 0 20px rgba(124,58,237,0.2);
+    }
+
+    /* ── GLITCH FLASH on transition ── */
+    @keyframes glitchFlash {
+      0%   { opacity:1; filter:none; }
+      20%  { opacity:0.4; filter:hue-rotate(90deg) brightness(1.4); transform:translateX(3px); }
+      40%  { opacity:0.8; filter:hue-rotate(-30deg); transform:translateX(-2px); }
+      60%  { opacity:0.5; filter:brightness(1.8); transform:translateX(1px); }
+      80%  { opacity:0.9; filter:none; transform:translateX(0); }
+      100% { opacity:1; filter:none; transform:translateX(0); }
+    }
+    .glitch { animation:glitchFlash 0.35s ease both; }
+
+    /* ── GHOST OVERLAY ENHANCEMENTS ── */
+    .ghost-overlay-ring {
+      position:relative; display:flex; align-items:center; justify-content:center;
+      width:60px; height:60px;
+    }
+    .ghost-overlay-ring::before {
+      content:''; position:absolute; inset:0; border-radius:50%;
+      border:2px solid rgba(124,58,237,0.4);
+      animation:ringPulse 2s ease-in-out infinite;
+    }
+    .ghost-overlay-ring::after {
+      content:''; position:absolute; inset:-8px; border-radius:50%;
+      border:1px solid rgba(124,58,237,0.2);
+      animation:ringPulse 2s ease-in-out infinite 0.4s;
+    }
+    @keyframes ringPulse {
+      0%,100% { transform:scale(1); opacity:0.6; }
+      50%      { transform:scale(1.18); opacity:0.15; }
+    }
+    .ghost-overlay-icon { font-size:28px; position:relative; z-index:1;
+      animation:shieldPulse 2.4s ease-in-out infinite; }
+    @keyframes shieldPulse {
+      0%,100% { filter:drop-shadow(0 0 4px rgba(124,58,237,0.4)); }
+      50%      { filter:drop-shadow(0 0 14px rgba(124,58,237,0.9)); }
+    }
+
+    /* ── KNOX VERIFIED CHIP ── */
+    .knox-verified-chip {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:3px 10px; border-radius:12px; font-size:9px; letter-spacing:1.5px;
+      background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.5);
+      color:rgba(167,139,250,0.9); margin-top:4px;
+    }
+    .knox-verified-chip::before {
+      content:''; width:6px; height:6px; border-radius:50%;
+      background:var(--ghost); box-shadow:0 0 6px var(--ghost);
+      animation:pulse 2s infinite;
+    }
   </style>
   <script>
     // Auth guard — runs before page renders
@@ -499,20 +572,24 @@
               <div class="d-dot d-yellow"></div>
               <div class="d-dot d-green"></div>
             </div>
-            <div class="doc-title">confidential_report_Q2.docx</div>
+            <div class="doc-title">novatech_acquisition_Q2.docx</div>
             <div class="doc-status reading" id="docStatus">● READING</div>
           </div>
           <div class="doc-body" id="docBody">
-            <div class="doc-line" id="dl1">Project Meridian — Q2 Confidential Report</div>
-            <div class="doc-line" id="dl2">Revenue targets: <strong>$4.2M</strong> by end of quarter</div>
-            <div class="doc-line" id="dl3" style="color:var(--red)">Knox API Key: <strong>mk-9f2a-xxxx-4b81-knox</strong></div>
-            <div class="doc-line" id="dl4">User credentials stored in vault: <strong>admin@meridian.io</strong></div>
-            <div class="doc-line" id="dl5">Private notes: Meeting with Samsung exec on May 12th</div>
-            <div class="doc-line" id="dl6" style="color:var(--text-muted)">Behavioral data summary attached in appendix...</div>
+            <div class="scan-beam" id="scanBeam"></div>
+            <div class="doc-line" id="dl1">NovaTech Corp — Q2 Confidential Report</div>
+            <div class="doc-line" id="dl2">Acquisition budget: <strong>$18.7M</strong> · Target: Helios AI Ltd</div>
+            <div class="doc-line" id="dl3" style="color:var(--red)">Internal API Key: <strong>nt-7c3f-xxxx-9e12-prod</strong></div>
+            <div class="doc-line" id="dl4">Employee records vault: <strong>hr-admin@novatech.corp</strong></div>
+            <div class="doc-line" id="dl5">Board notes: Restructure decision deferred to June 3rd</div>
+            <div class="doc-line" id="dl6" style="color:var(--text-muted)">Legal due diligence report attached in appendix...</div>
             <div class="ghost-overlay" id="ghostOverlay">
-              <div class="ghost-overlay-icon">🛡️</div>
+              <div class="ghost-overlay-ring">
+                <div class="ghost-overlay-icon">🛡️</div>
+              </div>
               <div class="ghost-overlay-text">CONTENT BLOCKED</div>
               <div class="ghost-overlay-sub">Ghost Layer is active — document content hidden</div>
+              <div class="knox-verified-chip">SAMSUNG KNOX VERIFIED</div>
             </div>
           </div>
         </div>
@@ -623,7 +700,7 @@
             <div class="log-time">12:50</div>
             <div class="log-dot block"></div>
             <div class="log-content">
-              <div class="log-action">confidential_report_Q2.docx — content blocked</div>
+              <div class="log-action">novatech_acquisition_Q2.docx — content blocked</div>
               <div class="log-detail">Ghost Layer active · Only filename logged</div>
             </div>
             <div class="log-tag blocked">BLOCKED</div>
@@ -822,26 +899,53 @@
     const preview = document.getElementById('docPreview');
     const status  = document.getElementById('docStatus');
     const tagMode = document.getElementById('docTagMode');
+    const docBody = document.getElementById('docBody');
+    const scanBeam = document.getElementById('scanBeam');
+
+    // Glitch flash on the whole preview
+    preview.classList.add('glitch');
+    setTimeout(() => preview.classList.remove('glitch'), 400);
 
     if(on) {
+      // Hide scan beam
+      if(scanBeam) scanBeam.classList.add('hidden');
+
+      // Stagger blur: partial for first 2, full blur for 3–6
       lines.forEach((id,i) => {
         setTimeout(() => {
           const el = document.getElementById(id);
           if(el) el.classList.add(i < 2 ? 'partial' : 'blur');
-        }, i * 80);
+        }, i * 90);
       });
-      setTimeout(() => overlay.classList.add('show'), 500);
+
+      // Watermark + overlay after lines start blurring
+      setTimeout(() => docBody.classList.add('classified'), 350);
+      setTimeout(() => overlay.classList.add('show'), 560);
+
       preview.classList.add('blurred');
       status.textContent = '🛡️ BLOCKED';
       status.className = 'doc-status blocked';
       tagMode.style.cssText = 'background:var(--ghost-dim);color:var(--ghost);border-color:var(--ghost)';
       tagMode.textContent = '🛡️ Ghost Mode';
+
     } else {
-      lines.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) { el.classList.remove('blur','partial'); }
-      });
+      // Hide overlay + watermark immediately
       overlay.classList.remove('show');
+      docBody.classList.remove('classified');
+
+      // Stagger un-blur line by line
+      lines.forEach((id, i) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if(el) el.classList.remove('blur','partial');
+        }, i * 70);
+      });
+
+      // Restore scan beam after lines reveal
+      setTimeout(() => {
+        if(scanBeam) scanBeam.classList.remove('hidden');
+      }, lines.length * 70 + 100);
+
       preview.classList.remove('blurred');
       status.textContent = '● READING';
       status.className = 'doc-status reading';

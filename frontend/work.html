@@ -128,23 +128,18 @@
     .recovery-badge .rbdot { width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 6px var(--cyan); animation:pulse 2s infinite; }
     .recovery-time { font-size:11px; color:var(--text-muted); font-family:'Orbitron',sans-serif; }
 
-    .snapshot-body { display:grid; grid-template-columns:1fr auto; gap:24px; align-items:start; }
-    .snapshot-left {}
-    .snapshot-title { font-size:22px; font-weight:600; color:var(--text-primary); margin-bottom:6px; }
+    /* clean 2-column layout */
+    .snapshot-body { display:grid; grid-template-columns:1fr 200px; gap:24px; align-items:start; }
+    .snapshot-title { font-size:20px; font-weight:600; color:var(--text-primary); margin-bottom:4px; }
     .snapshot-title span { color:var(--cyan); }
-    .snapshot-file {
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 14px; background:var(--bg-card2); border:1px solid var(--border);
-      border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:12px;
-      color:var(--green); margin-bottom:14px;
-    }
-    .snapshot-desc { font-size:13px; color:var(--text-muted); line-height:1.7; margin-bottom:16px; }
-    .snapshot-desc strong { color:var(--text-primary); }
-    .snapshot-meta { display:flex; flex-wrap:wrap; gap:8px; }
+    .snapshot-summary { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px; }
+    .snapshot-summary strong { color:var(--text-primary); }
+    .snapshot-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
 
-    .snapshot-right { display:flex; flex-direction:column; gap:10px; min-width:180px; }
-    .snap-stat { background:var(--bg-card2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; text-align:center; }
-    .snap-stat-val { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:700; }
+    /* compact 2×2 stat grid */
+    .snap-stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .snap-stat { background:var(--bg-card2); border:1px solid var(--border); border-radius:8px; padding:12px 10px; text-align:center; }
+    .snap-stat-val { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:700; }
     .snap-stat-val.cyan   { color:var(--cyan); }
     .snap-stat-val.green  { color:var(--green); }
     .snap-stat-val.yellow { color:var(--yellow); }
@@ -153,7 +148,7 @@
     /* ── CODE BLOCK ── */
     .code-snapshot {
       background:rgba(0,0,0,0.4); border:1px solid var(--border);
-      border-radius:8px; overflow:hidden; margin-top:16px;
+      border-radius:8px; overflow:hidden;
     }
     .code-topbar {
       display:flex; align-items:center; justify-content:space-between;
@@ -164,7 +159,7 @@
     .code-dot { width:10px; height:10px; border-radius:50%; }
     .cd-red { background:#ff5f57; } .cd-yellow { background:#febc2e; } .cd-green { background:#28c840; }
     .code-filename { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); }
-    .code-body { padding:14px 16px; font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.8; overflow-x:auto; }
+    .code-body { padding:12px 16px; font-family:'JetBrains Mono',monospace; font-size:11.5px; line-height:1.75; overflow-x:auto; }
     .c-comment  { color:#4a6a8a; }
     .c-keyword  { color:#ff79c6; }
     .c-function { color:#50fa7b; }
@@ -392,23 +387,26 @@
     <div class="card recovery-card mb-20" style="animation-delay:0.05s">
       <div class="recovery-header">
         <div class="recovery-badge"><div class="rbdot"></div>THINKING RECOVERY ACTIVE</div>
-        <div class="recovery-time" id="awayTimer">Away for 00:00</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="recovery-time" id="awayTimer">Away for 00:00</div>
+          <button class="btn btn-cyan" style="padding:6px 16px;font-size:11px" onclick="resumeWork()">&#9654; Resume Work</button>
+        </div>
       </div>
 
       <div class="snapshot-body">
-        <div class="snapshot-left">
-          <div class="snapshot-title">You were refactoring the <span>Auth.js</span> login logic</div>
-          <div class="snapshot-file">📄 src/auth/auth.service.ts &nbsp;·&nbsp; Line 247</div>
-          <div class="snapshot-desc">
-            You were <strong>fixing token expiry edge cases</strong> in the JWT validation pipeline.
-            Last successful build was at <strong>10:45 AM</strong>. The PR #47 was pushed to
-            <strong>feature/knox-auth</strong> branch. Your next step was to write
-            <strong>unit tests</strong> for the refresh token flow.
+        <!-- LEFT: what you were doing -->
+        <div>
+          <div class="snapshot-title">Refactoring <span>Auth.js</span> login logic</div>
+          <div class="snapshot-summary">
+            Last working on <strong>token expiry edge cases</strong> in the JWT pipeline.
+            Next step: write <strong>unit tests</strong> for the refresh token flow.
           </div>
-          <div class="snapshot-meta">
-            <span class="tag tag-cyan">VS Code · Branch: feature/knox-auth</span>
-            <span class="tag tag-green">Build ✓ Passing</span>
-            <span class="tag tag-yellow">3 TODOs remaining</span>
+
+          <!-- Context pills -->
+          <div class="snapshot-pills">
+            <span class="tag tag-cyan">💻 VS Code &nbsp;·&nbsp; feature/knox-auth</span>
+            <span class="tag tag-green">✓ Build Passing</span>
+            <span class="tag tag-yellow">⚠️ 3 TODOs left</span>
             <span class="tag tag-purple">PR #47 Open</span>
           </div>
 
@@ -420,27 +418,20 @@
                 <div class="code-dot cd-yellow"></div>
                 <div class="code-dot cd-green"></div>
               </div>
-              <div class="code-filename">src/auth/auth.service.ts — Last edited 10:45 AM</div>
-              <span class="tag tag-cyan" style="font-size:9px;padding:2px 8px;">MERIDIAN SNAPSHOT</span>
+              <div class="code-filename">src/auth/auth.service.ts &nbsp;·&nbsp; Line 247 &nbsp;·&nbsp; last edited 10:45 AM</div>
+              <span class="tag tag-cyan" style="font-size:9px;padding:2px 8px;">SNAPSHOT</span>
             </div>
             <div class="code-body">
-<span class="c-comment">// auth.service.ts — JWT token validation</span>
-<span class="c-keyword">async function</span> <span class="c-function">validateToken</span>(<span class="c-var">token</span>: <span class="c-keyword">string</span>) {
-  <span class="c-keyword">try</span> {
-    <span class="c-keyword">const</span> <span class="c-var">payload</span> = jwt.verify(<span class="c-var">token</span>, <span class="c-var">SECRET_KEY</span>);
-<span class="c-highlight">    <span class="c-comment">// TODO: Handle edge case — token 5s before expiry</span></span>
-<span class="c-highlight">    <span class="c-keyword">if</span> (<span class="c-var">payload</span>.exp - Date.now() &lt; <span class="c-num">5000</span>) {</span>
-<span class="c-highlight">      <span class="c-keyword">return</span> <span class="c-function">refreshToken</span>(<span class="c-var">payload</span>.userId);</span>
-<span class="c-highlight">    }</span>
-    <span class="c-keyword">return</span> { valid: <span class="c-keyword">true</span>, <span class="c-var">payload</span> };
-  } <span class="c-keyword">catch</span> (err) {
-    <span class="c-keyword">return</span> { valid: <span class="c-keyword">false</span>, error: <span class="c-string">'TOKEN_EXPIRED'</span> };
-  }
-}</div>
+<span class="c-comment">// TODO: Handle edge case — token 5s before expiry</span>
+<span class="c-highlight"><span class="c-keyword">if</span> (<span class="c-var">payload</span>.exp - Date.now() &lt; <span class="c-num">5000</span>) {</span>
+<span class="c-highlight">  <span class="c-keyword">return</span> <span class="c-function">refreshToken</span>(<span class="c-var">payload</span>.userId);</span>
+<span class="c-highlight">}</span>
+<span class="c-keyword">return</span> { valid: <span class="c-keyword">true</span>, <span class="c-var">payload</span> };</div>
           </div>
         </div>
 
-        <div class="snapshot-right">
+        <!-- RIGHT: key stats 2x2 -->
+        <div class="snap-stats-grid">
           <div class="snap-stat">
             <div class="snap-stat-val cyan">45m</div>
             <div class="snap-stat-label">Deep Work</div>
@@ -681,9 +672,9 @@
             <div class="app-card-status ok">● Connected</div>
             <div class="app-card-count">3 events</div>
           </div>
-          <div class="app-card" onclick="showToast('WhatsApp: 5 unread messages')">
-            <div class="app-card-icon">💚</div>
-            <div class="app-card-name">WhatsApp</div>
+          <div class="app-card" onclick="showToast('Slack: 12 unread messages')">
+            <div class="app-card-icon">💬</div>
+            <div class="app-card-name">Slack</div>
             <div class="app-card-status warn">● 1 deadline</div>
             <div class="app-card-count">5 unread</div>
           </div>

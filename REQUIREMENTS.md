@@ -58,13 +58,13 @@ Both domains are protected by a cross-cutting **Privacy (Ghost) Layer** powered 
 - REQ-WORK-13: Upcoming events must be shown in a sidebar/panel with countdowns
 
 ### 3.4 Task Detection from Chats
-- REQ-WORK-14: System must scan WhatsApp and Slack message content for deadline keywords (e.g. "submit by", "due on", "deliver before")
+- REQ-WORK-14: System must scan Slack and Gmail message content for deadline keywords (e.g. "submit by", "due on", "deliver before")
 - REQ-WORK-15: Detected tasks must appear with source, message preview, and detected date
 - REQ-WORK-16: User must be able to approve and auto-add detected task to calendar with one click
 - REQ-WORK-17: This feature must be disabled when Ghost Layer is active (privacy protection)
 
 ### 3.5 App Time Tracking
-- REQ-WORK-18: System must track time spent per app (VS Code, Chrome, WhatsApp, Notion, Instagram, etc.)
+- REQ-WORK-18: System must track time spent per app (VS Code, Chrome, Slack, Notion, Instagram, etc.)
 - REQ-WORK-19: App usage must be shown as a bar chart with daily totals
 - REQ-WORK-20: Productive vs. non-productive time must be distinguished
 
@@ -202,7 +202,7 @@ Both domains are protected by a cross-cutting **Privacy (Ghost) Layer** powered 
 ## 9. Out of Scope (for hackathon demo)
 
 - Real Samsung Knox API integration (simulated in UI)
-- Actual WhatsApp/Slack message reading (simulated data)
+- Actual Slack/Gmail message reading (simulated data)
 - Live device communication via SmartThings API (simulated toggles)
 - Real LLM inference on-device (simulated responses)
 - Mobile/responsive layout for phones
