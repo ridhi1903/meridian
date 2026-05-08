@@ -1,23 +1,69 @@
-# 🤖 AI Disclosure: Meridian Cognitive OS
+# AI Usage DISCLOSURE FORM
 
-This document outlines the use of Artificial Intelligence in the Meridian project for the **Samsung OpenCLAW Hackathon 2026**.
+## 1. Team Details
+**Team Name:** Meridian  
+**Project / Product Name:** Meridian Cognitive OS  
+**Organization / Institution (if any):** Samsung OpenCLAW Hackathon 2026  
+**Submission Date:** May 8, 2026  
 
-## 🧠 AI Models & Frameworks Used
-*   **Framework**: [Samsung OpenCLAW](https://openclaw.ai/) (Local AI Gateway)
-*   **LLM Model**: Meta Llama 3.1 8B (via Groq Cloud)
-*   **Inference Engine**: Groq (for low-latency response during the live demo)
+## 2. AI Usage Declaration
+**Did your team use any Artificial Intelligence (AI) in developing this project?** Yes
 
-## 🛠️ How AI is Integrated
-Meridian uses AI to provide "Human-in-the-loop" cognitive coaching:
-1.  **Narrative Insights**: OpenCLAW processes raw application usage telemetry (screen time) and transforms it into a coaching narrative using warm, human-like direct address.
-2.  **Mental Snapshots**: The system uses LLM inference to summarize the user's active window context into a brief "Snapshot" to help with task resumption.
-3.  **Pattern Detection**: While intervention is rule-based (Friction Screens), the AI is used to provide the context-aware advice shown during the 5-second delay.
+## 3. Purpose of AI Usage (Brief Details)
+**Idea generation / brainstorming:** Yes — used to brainstorm contextual nudge messages and logic threshold ideas.  
+**Code generation or assistance:** Yes — used for writing boilerplate code, DOM manipulation, and CSS variables.  
+**UI / UX design:** Yes — assisted with creating smooth CSS transition effects and SVG animation math.  
+**Content creation:** Yes — used to generate the copy for the smart nudges and burnout alerts.  
+**Data analysis:** No  
+**Testing / debugging:** Yes — used to troubleshoot edge cases with local storage and API rate limiting.  
+**Other:** N/A  
 
-## ⚖️ Responsible AI Practices
-*   **Privacy-First (Ghost Layer)**: Users can toggle a "Ghost Layer" that explicitly redacts sensitive application names and window titles from the AI context window.
-*   **Local Processing**: By utilizing the OpenCLAW gateway, Meridian ensures that user telemetry is filtered and managed locally before any inference calls are made.
-*   **Human Agency**: Meridian never blocks the user. It utilizes "Friction Screens" to provide a pause, ensuring the user maintains final agency over their attention.
+## 4. Feature Origin Classification
 
----
-**Team Sam is Singing**  
-*MSRIT, 2026*
+**1. Feature Name:** Ghost Layer (Privacy Mode)
+**Self-Generated/AI-Generated/Both:** Both
+**Description:** We designed the Samsung Knox integration and the core security logic ourselves to ensure strict hardware isolation. We used Claude 3.5 Sonnet to help write the boilerplate DOM manipulation code for the screen blurring and the animated particle canvas effects.
+
+**2. Feature Name:** Distraction Loop Detector
+**Self-Generated/AI-Generated/Both:** Both
+**Description:** The core tracking logic for app-switches was manually developed by our team. We utilized ChatGPT to brainstorm the logic for threshold-based escalation and to refine the mathematical model calculating the loop intensity score over time.
+
+**3. Feature Name:** Smart Nudges
+**Self-Generated/AI-Generated/Both:** Both
+**Description:** We built the event listeners and the custom notification UI entirely from scratch. AI was leveraged to brainstorm the context-aware phrasing for the different nudge messages (e.g., burnout warnings, break reminders) so they sounded natural.
+
+**4. Feature Name:** 13-Theme System
+**Self-Generated/AI-Generated/Both:** Both
+**Description:** The aesthetic direction and state-management logic were developed manually. We used AI tools to quickly generate and structure the extensive list of CSS variables and hex codes needed across all 13 distinct themes.
+
+**5. Feature Name:** Scan & Sync
+**Self-Generated/AI-Generated/Both:** Self-Generated
+**Description:** This feature was entirely hand-written without any AI assistance. We manually implemented the email parsing logic and the Calendar integration to ensure strict data privacy and accuracy.
+
+**6. Feature Name:** Privacy Audit Log
+**Self-Generated/AI-Generated/Both:** Both
+**Description:** We defined the data schema and event logging requirements. AI assisted in writing the local storage persistence functions and formatting the exportable audit logs for the user interface.
+
+**7. Feature Name:** GitHub Pulse
+**Self-Generated/AI-Generated/Both:** Both
+**Description:** We architected the GitHub API integration. We used AI to quickly write the fetch requests, handle API rate limiting edge cases, and map the commit data to the frontend UI components.
+
+**8. Feature Name:** Cognitive Focus Score
+**Self-Generated/AI-Generated/Both:** Both
+**Description:** The custom algorithm weighing focus depth, task velocity, and distraction rate was designed by the team. AI was used to help implement the smooth SVG ring animation and calculate the stroke-dashoffset math.
+
+**9. Feature Name:** Thinking Recovery Engine
+**Self-Generated/AI-Generated/Both:** Both
+**Description:** The concept of saving the exact work context and the mental snapshot UI were developed by us. We used AI to help implement the 'away timer' logic and polish the transition animations for the 'Resume Work' flow.
+
+## 5. Ethical & Compliance Confirmation
+**AI usage complies with guidelines and policies:** Yes  
+**No proprietary or copyrighted data misused:** I Agree  
+
+## 6. Declaration & Sign-Off
+**Name of Team Representative:** Ridhi W  
+**Role:** Lead Developer / Architect  
+**Signature:**  
+![Ridhi W Signature](signature.png)
+
+**Date:** May 8, 2026

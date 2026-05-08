@@ -533,6 +533,15 @@ app.get('/api/nudges', (_req, res) => {
   ]);
 });
 
+app.get('/api/telegram-feed', (_req, res) => {
+  try {
+    const feed = readDB().telegram_feed || [];
+    res.json(feed);
+  } catch (error) {
+    res.json([]);
+  }
+});
+
 
 /* ═══════════════════════════════════════════════
    SECTION 3: GITHUB PULSE — Live Repo Heartbeat
