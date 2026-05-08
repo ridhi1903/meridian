@@ -18,13 +18,34 @@ require('dotenv').config();
 const express  = require('express');
 const cors     = require('cors');
 const path     = require('path');
+const fs       = require('fs');
 const { exec } = require('child_process');
+const { infer } = require('./openclaw_helper');
+const {
+  SYSTEM_PROMPT: COGNITIVE_COACH_SYSTEM_PROMPT,
+  buildNarrativeInsightPrompt,
+  buildFallbackNarrativeInsight,
+  formatDashboardInsight,
+  getDefaultActivityLog,
+} = require('./cognitive_coach');
+const {
+  SYSTEM_PROMPT: CONTEXT_GUARDIAN_SYSTEM_PROMPT,
+  buildMentalSnapshotPrompt,
+  buildFallbackMentalSnapshot,
+  formatMentalSnapshot,
+  getDefaultRecentActivity,
+} = require('./context_guardian');
+const { getFocusScore, startTelegramBot } = require('./telegram_bot');
 
 const app  = express();
 const PORT = process.env.PORT || 8000;
 
 // ── Full path to adb.exe (from .env) ──
 const ADB_PATH = process.env.ADB_PATH || 'adb';
+const dbPath = path.join(__dirname, 'data/database.json');
+
+const readDB = () => JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+const writeDB = (data) => fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
 
 // ── Middleware ──
 app.use(cors());
@@ -458,6 +479,60 @@ app.get('/api/tasks', (_req, res) => {
   ]);
 });
 
+app.get('/api/cognitive-score', (_req, res) => {
+  res.json(getFocusScore());
+});
+
+app.get('/api/narrative-insight', async (_req, res) => {
+  const activityLog = getDefaultActivityLog();
+  const fallback = formatDashboardInsight(buildFallbackNarrativeInsight(activityLog));
+
+  try {
+    const insight = formatDashboardInsight(
+      await infer(buildNarrativeInsightPrompt(activityLog), {
+        system: COGNITIVE_COACH_SYSTEM_PROMPT,
+      })
+    );
+    res.json({ insight });
+  } catch (error) {
+    res.json({ insight: fallback, fallback: true, message: error.message });
+  }
+});
+
+app.get('/api/mental-snapshot', async (_req, res) => {
+  const appHistory = Object.keys(liveSessionStats).length ? Object.keys(liveSessionStats) : ['VS Code', 'Chrome', 'Notion', 'Slack'];
+  const recentActivity = getDefaultRecentActivity(appHistory);
+  const fallback = formatMentalSnapshot(buildFallbackMentalSnapshot(recentActivity));
+
+  try {
+    const snapshot = formatMentalSnapshot(
+      await infer(buildMentalSnapshotPrompt(recentActivity), {
+        system: CONTEXT_GUARDIAN_SYSTEM_PROMPT,
+      })
+    );
+    res.json({ snapshot });
+  } catch (error) {
+    res.json({ snapshot: fallback, fallback: true, message: error.message });
+  }
+});
+
+app.get('/api/nudges', (_req, res) => {
+  const nudge = checkNudgeTrigger();
+  if (!nudge.triggerNudge) {
+    return res.json([]);
+  }
+
+  res.json([
+    {
+      id: 1,
+      type: 'warning',
+      icon: '!',
+      title: 'Distraction threshold reached',
+      text: `${nudge.nudgeApp} has crossed ${Math.round(nudge.nudgeLiveSec / 60)} minutes in this live session.`,
+    },
+  ]);
+});
+
 
 /* ═══════════════════════════════════════════════
    SECTION 3: GITHUB PULSE — Live Repo Heartbeat
@@ -578,6 +653,8 @@ app.listen(PORT, () => {
   console.log(`  ╚══════════════════════════════════════════════╝`);
   console.log(`  Baseline: ${Object.entries(dailyBaseline).map(([k,v]) => `${k}: ${Math.round(v/60)}m`).join(', ')}\n`);
 });
+
+startTelegramBot({ readDB, writeDB, infer });
 
 function cleanup() {
   console.log('\n[MERIDIAN] Shutting down — clearing ADB poll timer…');
