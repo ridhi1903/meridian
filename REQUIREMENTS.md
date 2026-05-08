@@ -2,7 +2,7 @@
 ## Product Requirements Document (PRD)
 **Samsung OpenCLAW Hackathon 2026**  
 **Team:** Anika Teja Reddy  
-**Date:** May 7, 2026  
+**Date:** May 8, 2026 (updated)  
 
 ---
 
@@ -174,7 +174,63 @@ Both domains are protected by a cross-cutting **Privacy (Ghost) Layer** powered 
 
 ---
 
-## 7. Technical Constraints
+## 7. SETTINGS Requirements
+
+### 7.1 Settings Page
+- REQ-SET-01: A dedicated Settings page must be accessible from the sidebar nav on every page
+- REQ-SET-02: Settings must be organized into 8 named tabs: Profile, Appearance, Notifications, Dashboard, Integration Permissions, Privacy & Ghost Layer, Knox & Security, Advanced
+- REQ-SET-03: A **Save All** button must persist all settings to `localStorage` with a toast confirmation
+- REQ-SET-04: A **Reset to Defaults** button must clear all persisted settings
+
+### 7.2 Appearance & Themes
+- REQ-SET-05: Settings must show all 13 themes as visual swatches grouped by category (Dark, Warm, Cool)
+- REQ-SET-06: Clicking a theme swatch must apply the theme live across the current page and persist it
+- REQ-SET-07: The active theme must be highlighted with a visual indicator
+
+### 7.3 Clock & Font
+- REQ-SET-08: User must be able to select clock format: 24-hour or 12-hour (AM/PM)
+- REQ-SET-09: Clock format change must take effect on all pages immediately; the topbar clock must update without page reload
+- REQ-SET-10: User must be able to select base font size: 12px, 14px, or 16px
+- REQ-SET-11: Font size change must apply immediately across the current page and persist to other pages via `localStorage`
+
+### 7.4 Integration Permissions
+- REQ-SET-12: Each of the 7 integrations (Gmail, Google Calendar, GitHub, Notion, Slack, SmartThings, Samsung Health) must have individually configurable permission scopes
+- REQ-SET-13: Available scopes: READ, WRITE, EXECUTE, ADMIN (where applicable)
+- REQ-SET-14: Permission scope changes must persist to `localStorage`
+
+---
+
+## 8. ANALYTICS Requirements
+
+- REQ-ANL-01: An Analytics page must show cognitive score trends over time
+- REQ-ANL-02: App usage breakdown must distinguish productive from distraction apps
+- REQ-ANL-03: Focus session history and patterns must be visualized
+- REQ-ANL-04: Weekly productivity summary must be shown
+- REQ-ANL-05: All charts must animate on page load
+
+---
+
+## 9. NUDGES Page Requirements
+
+- REQ-NUD-01: A dedicated Smart Nudges page must list all active nudges with full detail
+- REQ-NUD-02: Each nudge must show: priority level (HIGH / MED / LOW), category, icon, title, description, time ago, and action buttons
+- REQ-NUD-03: Nudges must be filterable by category: All, Focus, Work, Home, Health
+- REQ-NUD-04: Each nudge must have a primary action button (Lock Context, Add to Calendar, etc.) and a dismiss button
+- REQ-NUD-05: Dismissed nudges must decrement the badge count stored in `meridian_nudge_count` in `localStorage`
+- REQ-NUD-06: Nudge badge in sidebar must sync count across all pages
+
+---
+
+## 10. INTEGRATIONS Requirements
+
+- REQ-INT-01: An Integrations page must show all supported third-party services
+- REQ-INT-02: Each integration must show: name, icon, connection status (Connected / Disconnected), and last sync time
+- REQ-INT-03: User must be able to connect and disconnect each service individually
+- REQ-INT-04: Connected integrations must be persisted to `localStorage` (`meridian_integrations`)
+
+---
+
+## 11. Technical Constraints
 
 | Constraint | Requirement |
 |---|---|
@@ -183,26 +239,33 @@ Both domains are protected by a cross-cutting **Privacy (Ghost) Layer** powered 
 | **Storage** | `localStorage` only — no external database for this prototype |
 | **Security** | Samsung Knox encryption wrapper |
 | **Frontend** | Pure HTML, CSS, JavaScript — no frameworks |
-| **Backend** | Node.js + Express (for API simulation) |
+| **Backend** | Node.js + Express (port 8000, configured via `backend/.env`) |
 | **Fonts** | Orbitron (headings), Inter (body), JetBrains Mono (code) |
 
 ---
 
-## 8. Non-Functional Requirements
+## 12. Non-Functional Requirements
 
 - REQ-NF-01: All page transitions must animate (fadeIn, 0.4s)
 - REQ-NF-02: All bars/rings must animate on load (not appear instantly)
-- REQ-NF-03: Dark theme only — background #040812, accent #00d4ff (cyan), #00ff88 (green)
+- REQ-NF-03: Multi-theme system with 13 themes across 3 categories (Dark: Cyber Dark, Midnight, Matrix, Slate, Monochrome / Warm: Ember, Rosewood, Amber, Solar / Cool: Ocean, Forest, Lilac, Aurora, Breeze). Default theme is Cyber Dark (background #040812, accent #00d4ff).
 - REQ-NF-04: Keyboard shortcuts must be available for power users
 - REQ-NF-05: Toast notifications must appear for all significant user actions
 - REQ-NF-06: UI must be responsive within a reasonable desktop/tablet range
+- REQ-NF-07: Active theme must persist across all page navigations via `localStorage` (`meridian_theme_vars`)
+- REQ-NF-08: Ghost Layer and all privacy-related accent colours must follow the active theme — no hardcoded colour values
+- REQ-NF-09: Clock format (24h / 12h AM/PM) must be user-configurable and persist across all pages via `localStorage`
+- REQ-NF-10: Base font size must be user-configurable (12 / 14 / 16 px) and persist across all pages via `localStorage`
 
 ---
 
-## 9. Out of Scope (for hackathon demo)
+## 13. V2 Roadmap
 
-- Real Samsung Knox API integration (simulated in UI)
-- Actual Slack/Gmail message reading (simulated data)
-- Live device communication via SmartThings API (simulated toggles)
-- Real LLM inference on-device (simulated responses)
-- Mobile/responsive layout for phones
+The following capabilities are architected into the system design and are planned for the production release:
+
+- **Samsung Knox deep API integration** — direct TrustZone process attestation and hardware-backed key management
+- **Live Slack / Gmail reading** — OAuth-authenticated message scanning via official APIs
+- **Real-time SmartThings device communication** — direct WebSocket control via SmartThings Cloud API
+- **On-device LLM inference** — Samsung AI stack integration for fully private, local language model processing
+- **Mobile-native layout** — optimised for Galaxy Z Fold / Galaxy S series form factors
+
