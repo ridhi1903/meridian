@@ -1,4 +1,5 @@
 # AI Usage DISCLOSURE FORM
+Link - https://docs.google.com/document/d/1Y1zVCe_fqBvUah8wKuGcUY0J1xqqmDML/edit?usp=sharing&ouid=108048003601696841531&rtpof=true&sd=true
 
 ## 1. Team Details
 **Team Name:** Meridian  
@@ -10,11 +11,9 @@
 **Did your team use any Artificial Intelligence (AI) in developing this project?** Yes
 
 ## 3. Purpose of AI Usage (Brief Details)
-**Idea generation / brainstorming:** Yes — used to brainstorm contextual nudge messages and logic threshold ideas.  
+**Idea generation / brainstorming:** No AI used  
 **Code generation or assistance:** Yes — used for writing boilerplate code, DOM manipulation, and CSS variables.  
 **UI / UX design:** Yes — assisted with creating smooth CSS transition effects and SVG animation math.  
-**Content creation:** Yes — used to generate the copy for the smart nudges and burnout alerts.  
-**Data analysis:** No  
 **Testing / debugging:** Yes — used to troubleshoot edge cases with local storage and API rate limiting.  
 **Other:** N/A  
 
@@ -64,6 +63,6 @@
 **Name of Team Representative:** Ridhi W  
 **Role:** Lead Developer / Architect  
 **Signature:**  
-![Ridhi W Signature](signature.png)
+![Ridhi Wadhwani Signature]()
 
 **Date:** May 8, 2026
