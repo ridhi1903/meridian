@@ -108,9 +108,10 @@ const MERIDIAN = (() => {
     _intervalId: null,
 
     /** Inject live time into every element matching selector */
-    start(selector = '[data-meridian-clock]') {
+    start(selector = '#clock, [data-meridian-clock]') {
       const update = () => {
-        const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+        const use12 = localStorage.getItem('meridian_clock_format') === '12';
+        const time = new Date().toLocaleTimeString('en-US', { hour12: use12 });
         document.querySelectorAll(selector).forEach(el => {
           el.textContent = time;
         });
@@ -516,6 +517,49 @@ const MERIDIAN = (() => {
   /* ─────────────────────────────────────────────
      INIT — called automatically on script load
   ───────────────────────────────────────────── */
+  /* ─────────────────────────────────────────────
+     THEME — restore saved theme on every page
+  ───────────────────────────────────────────── */
+  const Theme = {
+    apply() {
+      try {
+        const vars = JSON.parse(localStorage.getItem('meridian_theme_vars') || 'null');
+        if (!vars) return;
+        const root = document.documentElement;
+        Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+        // Derive ghost layer colour from theme accent (--cyan) so
+        // privacy page ghost effects match the chosen theme
+        const accent = (vars['--cyan'] || '#7c3aed').slice(0, 7);
+        const r = parseInt(accent.slice(1,3), 16);
+        const g = parseInt(accent.slice(3,5), 16);
+        const b = parseInt(accent.slice(5,7), 16);
+        const rgb = `${r},${g},${b}`;
+        root.style.setProperty('--ghost',     accent);
+        root.style.setProperty('--ghost-rgb',  rgb);
+        root.style.setProperty('--ghost-dim',  accent + '22');
+        root.style.setProperty('--ghost-mid',  accent + '55');
+        root.style.setProperty('--purple',     accent);
+        root.style.setProperty('--purple-dim', accent + '22');
+
+        // Inject overrides for elements with hardcoded backgrounds across all pages
+        let el = document.getElementById('meridian-theme-override');
+        if (!el) {
+          el = document.createElement('style');
+          el.id = 'meridian-theme-override';
+          (document.head || document.documentElement).appendChild(el);
+        }
+        el.textContent = [
+          '.sidebar { background: var(--bg-sidebar) !important; }',
+          '.topbar  { background: var(--bg-topbar)  !important; }',
+          '.grid-bg { background-image:',
+          '  linear-gradient(var(--grid-color) 1px, transparent 1px),',
+          '  linear-gradient(90deg, var(--grid-color) 1px, transparent 1px) !important; }',
+        ].join('\n');
+      } catch (_) {}
+    },
+  };
+
   function _init() {
     // Page fade-in
     Transition.init();
@@ -526,8 +570,18 @@ const MERIDIAN = (() => {
       Session.guard();
     }
 
+    // Apply saved theme immediately (before DOMContentLoaded for instant render)
+    Theme.apply();
+
     // Wait for DOM
     document.addEventListener('DOMContentLoaded', () => {
+      // Re-apply theme after DOM is ready (catches sidebar/topbar vars)
+      Theme.apply();
+
+      // Apply saved font size
+      const savedFs = localStorage.getItem('meridian_font_size');
+      if (savedFs) document.documentElement.style.setProperty('font-size', savedFs + 'px');
+
       // Highlight active nav link
       Nav.highlight();
 
@@ -564,6 +618,7 @@ const MERIDIAN = (() => {
     Nav,
     GhostMode,
     Nudges,
+    Theme,
     Utils,
     Device,
   };
