@@ -362,7 +362,10 @@ const MERIDIAN = (() => {
 
     /** Update nav badge(s) to reflect unread count */
     updateBadge() {
-      const count = this.unreadCount();
+      // Use the live count saved by nudges.html; fall back to 5 on first load
+      const stored = localStorage.getItem('meridian_nudge_count');
+      const count = stored !== null ? parseInt(stored, 10) : 5;
+      if (stored === null) localStorage.setItem('meridian_nudge_count', '5');
       document.querySelectorAll('.nav-badge').forEach(el => {
         el.textContent = count > 0 ? count : '';
         el.style.display = count > 0 ? 'inline-block' : 'none';

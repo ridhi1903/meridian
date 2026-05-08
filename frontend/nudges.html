@@ -228,7 +228,7 @@
     <a class="nav-item active" href="nudges.html"><span class="nav-icon">🔔</span> Nudges <span class="nav-badge" id="navBadge">5</span></a>
     <a class="nav-item" href="integrations.html"><span class="nav-icon">🔗</span> Integrations</a>
     <div class="nav-section">System</div>
-    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
     <a class="nav-item" href="index.html"><span class="nav-icon">⏏️</span> Logout</a>
   </nav>
   <div class="sidebar-bottom">
@@ -561,6 +561,8 @@
 
   function updateCounts() {
     const n = activeNudges.size;
+    // Persist live count so every other page badge stays in sync
+    localStorage.setItem('meridian_nudge_count', String(n));
     document.getElementById('navBadge').textContent = n > 0 ? n : '';
     document.getElementById('navBadge').style.display = n > 0 ? 'inline-block' : 'none';
     document.getElementById('activeCount').textContent = n + ' active nudge' + (n !== 1 ? 's' : '');
