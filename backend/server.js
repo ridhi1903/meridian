@@ -3,21 +3,21 @@
  * server.js
  *
  * Features:
- *  1. Serves frontend static files
- *  2. Auth login endpoint (mock)
- *  3. Device states endpoint (mock)
- *  4. Tasks endpoint (mock)
- *  5. GitHub Pulse — live commit velocity tracking
- *  6. ADB Active App Tracker — polls Samsung phone every 2s
- *     via USB-connected ADB, detects distraction loops
- *  7. CORS enabled, graceful cleanup on exit
+ *  1. Hybrid App Tracking — real Digital Wellbeing baseline + live ADB delta
+ *  2. Live Cognitive Score — computed from focus vs distraction ratio
+ *  3. Session Nudges — triggers when distraction app hits 15min live time
+ *  4. Ghost Mode — pauses live tracking, masks app names
+ *  5. Distraction Loop Detector — 3+ consecutive distraction switches
+ *  6. GitHub Pulse — live commit velocity tracking
+ *  7. Auth, Devices, Tasks endpoints
+ *  8. CORS, graceful cleanup
  */
 
 require('dotenv').config();
 
-const express = require('express');
-const cors    = require('cors');
-const path    = require('path');
+const express  = require('express');
+const cors     = require('cors');
+const path     = require('path');
 const { exec } = require('child_process');
 
 const app  = express();
@@ -35,10 +35,9 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 
 
 /* ═══════════════════════════════════════════════
-   SECTION 1: ADB ACTIVE APP TRACKER
-   Polls `adb shell dumpsys activity recents`
-   every 2 seconds, parses Recent #0, tracks
-   distraction loops in real-time.
+   SECTION 1: HYBRID APP TRACKING ENGINE
+   Baseline (hardcoded from Digital Wellbeing) +
+   Live ADB delta = realistic usage stats
 ═══════════════════════════════════════════════ */
 
 // ── Package → Friendly Name Map ──
@@ -70,140 +69,251 @@ const PACKAGE_MAP = {
   'com.google.android.apps.docs.editors.sheets': 'Google Sheets',
   'com.microsoft.office.word':          'Microsoft Word',
   'com.microsoft.office.excel':         'Microsoft Excel',
+  'com.linkedin.android':               'LinkedIn',
+  'in.startv.hotstar':                  'JioHotstar',
+  'com.jio.media.ondemand':             'JioHotstar',
+  'com.samsung.android.forest':         'Forest',
 };
 
 // ── Distraction vs Productive classification ──
 const DISTRACTION_APPS = new Set([
   'Instagram', 'YouTube', 'Reddit', 'X (Twitter)', 'Snapchat',
-  'Netflix', 'Spotify',
+  'Netflix', 'Spotify', 'JioHotstar',
 ]);
 
 const PRODUCTIVE_APPS = new Set([
   'VS Code', 'Google Classroom', 'Google Docs', 'Google Sheets',
   'Microsoft Word', 'Microsoft Excel', 'Notion', 'Termux',
-  'Chrome', 'Gmail', 'Calendar',
+  'Chrome', 'Gmail', 'Calendar', 'LinkedIn',
 ]);
 
-// ── ADB State ──
+/* ─────────────────────────────────────────────
+   HYBRID DATA MODEL
+   dailyBaseline = hardcoded from real Digital Wellbeing (seconds)
+   liveSessionStats = accumulated in real-time via ADB (seconds)
+   Total = baseline + live
+───────────────────────────────────────────── */
+
+const dailyBaseline = {
+  'WhatsApp':   5340,   // 1h 29m
+  'Instagram':  3720,   // 1h 2m
+  'JioHotstar': 1200,   // 20m
+  'VS Code':    7200,   // 2h 0m
+  'LinkedIn':   1320,   // 22m
+};
+
+// Live session accumulator — incremented by +2s every ADB poll
+let liveSessionStats = {};
+
+/**
+ * Get the total usage time for an app (baseline + live).
+ */
+function getTotalTime(appName) {
+  return (dailyBaseline[appName] || 0) + (liveSessionStats[appName] || 0);
+}
+
+/**
+ * Get combined stats for all apps (baseline keys + live keys merged).
+ */
+function getAllAppStats() {
+  const allApps = new Set([
+    ...Object.keys(dailyBaseline),
+    ...Object.keys(liveSessionStats),
+  ]);
+
+  const result = {};
+  for (const app of allApps) {
+    result[app] = {
+      baseline: dailyBaseline[app] || 0,
+      live:     liveSessionStats[app] || 0,
+      total:    getTotalTime(app),
+      category: classifyApp(app),
+    };
+  }
+  return result;
+}
+
+/* ─────────────────────────────────────────────
+   LIVE METRICS — Focus Time & Cognitive Score
+───────────────────────────────────────────── */
+
+/**
+ * Calculate total Focus Time (productive apps) in seconds.
+ * Uses baseline + live for all productive apps.
+ */
+function calcFocusTime() {
+  let total = 0;
+  const allApps = new Set([...Object.keys(dailyBaseline), ...Object.keys(liveSessionStats)]);
+  for (const app of allApps) {
+    if (PRODUCTIVE_APPS.has(app)) {
+      total += getTotalTime(app);
+    }
+  }
+  return total;
+}
+
+/**
+ * Calculate total Distraction Time in seconds.
+ */
+function calcDistractionTime() {
+  let total = 0;
+  const allApps = new Set([...Object.keys(dailyBaseline), ...Object.keys(liveSessionStats)]);
+  for (const app of allApps) {
+    if (DISTRACTION_APPS.has(app)) {
+      total += getTotalTime(app);
+    }
+  }
+  return total;
+}
+
+/**
+ * Live Cognitive Score (0–100).
+ * Formula: 100 × (focusTime / (focusTime + distractionTime))
+ * Clamped to [0, 100], biased slightly toward productivity.
+ */
+function calcCognitiveScore() {
+  const focus      = calcFocusTime();
+  const distract   = calcDistractionTime();
+  const totalUsage = focus + distract;
+
+  if (totalUsage === 0) return 50; // neutral baseline
+
+  // Raw ratio: 0.0 (all distraction) to 1.0 (all productive)
+  const ratio = focus / totalUsage;
+
+  // Apply a slight sigmoid curve to make the score feel more dynamic
+  // At 50/50 ratio → score ≈ 50. At 80/20 → score ≈ 85.
+  const score = Math.round(100 * (1 / (1 + Math.exp(-6 * (ratio - 0.5)))));
+
+  return Math.max(0, Math.min(100, score));
+}
+
+/* ─────────────────────────────────────────────
+   SESSION NUDGE — triggers at 15min live distraction
+───────────────────────────────────────────── */
+const NUDGE_THRESHOLD_SEC = 900; // 15 minutes
+
+function checkNudgeTrigger() {
+  for (const [app, secs] of Object.entries(liveSessionStats)) {
+    if (DISTRACTION_APPS.has(app) && secs >= NUDGE_THRESHOLD_SEC) {
+      return { triggerNudge: true, nudgeApp: app, nudgeLiveSec: secs };
+    }
+  }
+  return { triggerNudge: false, nudgeApp: null, nudgeLiveSec: 0 };
+}
+
+/* ─────────────────────────────────────────────
+   GHOST MODE
+───────────────────────────────────────────── */
+let _ghostMode = false;
+
+app.post('/api/toggle-ghost-mode', (_req, res) => {
+  _ghostMode = !_ghostMode;
+  console.log(`[MERIDIAN] Ghost Mode: ${_ghostMode ? 'ON — tracking paused' : 'OFF — tracking resumed'}`);
+  res.json({ ghostMode: _ghostMode });
+});
+
+app.get('/api/ghost-mode', (_req, res) => {
+  res.json({ ghostMode: _ghostMode });
+});
+
+/* ─────────────────────────────────────────────
+   ADB STATE & LOOP TRACKER
+───────────────────────────────────────────── */
+
 let _activeApp = {
   package:       null,
   name:          'Waiting for ADB…',
   timestamp:     new Date().toISOString(),
-  category:      'unknown', // 'distraction' | 'productive' | 'neutral'
+  category:      'unknown',
   loopDetected:  false,
   loopSequence:  [],
   loopScore:     0,
   adbConnected:  false,
 };
 
-let _recentSequence = [];  // Rolling list of recently opened distraction apps
-let _loopScore      = 0;   // Increments on each distraction switch, resets on productive
-let _lastPackage    = null; // Track last package to avoid duplicates
-let _adbPollTimer   = null; // Interval reference for cleanup
+let _recentSequence = [];
+let _loopScore      = 0;
+let _lastPackage    = null;
+let _adbPollTimer   = null;
 
-/**
- * Parse the output of `adb shell dumpsys activity recents`
- * and extract the package name from `Recent #0`.
- *
- * Example line:
- *   * Recent #0: Task{8ac8e85 #26140 type=standard A=1000:com.android.settings}
- *
- * We grab the package from A=UID:PACKAGE or fallback to I=PACKAGE/
- */
+/* ─────────────────────────────────────────────
+   ADB PARSING
+───────────────────────────────────────────── */
+
 function parseActivePackage(output) {
   const lines = output.split('\n');
-
   for (const line of lines) {
-    // Find the Recent #0 line
     if (/Recent\s*#0/.test(line)) {
-      // Strategy 1: Match A=UID:com.package.name
       const aMatch = line.match(/A=\d+:([a-zA-Z0-9._]+)/);
       if (aMatch) return aMatch[1];
-
-      // Strategy 2: Match A=com.package.name (no UID prefix)
       const aMatch2 = line.match(/A=([a-zA-Z][a-zA-Z0-9._]+)/);
       if (aMatch2) return aMatch2[1];
-
-      // Strategy 3: Match I=com.package.name/
       const iMatch = line.match(/I=([a-zA-Z][a-zA-Z0-9._]+)\//);
       if (iMatch) return iMatch[1];
-
-      break; // Only care about Recent #0
+      break;
     }
   }
-
   return null;
 }
 
-/**
- * Resolve a package name to a friendly name.
- * Falls back to the raw package name with truncation.
- */
 function resolveName(pkg) {
   if (!pkg) return 'Unknown';
   if (PACKAGE_MAP[pkg]) return PACKAGE_MAP[pkg];
-
-  // Try partial match (e.g., com.google.android.apps.docs.editors.docs)
   for (const [key, name] of Object.entries(PACKAGE_MAP)) {
     if (pkg.startsWith(key) || key.startsWith(pkg)) return name;
   }
-
-  // Fallback: extract the last segment of the package name
   const parts = pkg.split('.');
   const last = parts[parts.length - 1];
   return last.charAt(0).toUpperCase() + last.slice(1);
 }
 
-/**
- * Classify an app as distraction, productive, or neutral.
- */
 function classifyApp(name) {
   if (DISTRACTION_APPS.has(name)) return 'distraction';
   if (PRODUCTIVE_APPS.has(name)) return 'productive';
   return 'neutral';
 }
 
-/**
- * Update the distraction loop tracker.
- * Loop is detected when 3+ distraction apps are opened
- * consecutively without a productive app in between.
- */
 function updateLoop(name, category) {
   if (category === 'distraction') {
-    // Add to sequence (avoid consecutive duplicates)
     if (_recentSequence.length === 0 || _recentSequence[_recentSequence.length - 1] !== name) {
       _recentSequence.push(name);
-      _loopScore = Math.min(100, _loopScore + 8); // +8 per distraction switch
+      _loopScore = Math.min(100, _loopScore + 8);
     }
   } else if (category === 'productive') {
-    // Productive app breaks the loop — reset sequence
     _recentSequence = [];
-    _loopScore = Math.max(0, _loopScore - 5); // Slowly decay score
+    _loopScore = Math.max(0, _loopScore - 5);
   }
-  // Neutral apps (launcher, settings, etc.) don't affect the loop
-
-  // Cap the rolling sequence at last 10 entries
   if (_recentSequence.length > 10) {
     _recentSequence = _recentSequence.slice(-10);
   }
-
   return {
     loopDetected: _recentSequence.length >= 3,
-    loopSequence: _recentSequence.slice(), // copy
+    loopSequence: _recentSequence.slice(),
     loopScore:    _loopScore,
   };
 }
 
-/**
- * Execute the ADB command and update state.
- * Runs every 2 seconds via setInterval.
- */
+/* ─────────────────────────────────────────────
+   ADB POLL — every 2 seconds
+   Now also accumulates live session time
+───────────────────────────────────────────── */
+
 function pollADB() {
+  // Ghost Mode — pause tracking
+  if (_ghostMode) {
+    _activeApp.name      = 'Classified Activity';
+    _activeApp.package   = null;
+    _activeApp.category  = 'ghost';
+    _activeApp.timestamp = new Date().toISOString();
+    _activeApp.adbConnected = true;
+    return;
+  }
+
   const cmd = `"${ADB_PATH}" shell dumpsys activity recents`;
 
-  exec(cmd, { timeout: 5000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+  exec(cmd, { timeout: 5000, maxBuffer: 1024 * 512 }, (err, stdout) => {
     if (err) {
-      // ADB not connected or command failed
       _activeApp.adbConnected = false;
       _activeApp.name = 'ADB Disconnected';
       _activeApp.package = null;
@@ -213,24 +323,27 @@ function pollADB() {
     }
 
     const pkg = parseActivePackage(stdout);
-
-    if (!pkg) {
-      // Could not parse — keep last known state
-      return;
-    }
-
-    // Skip if same app as last poll (no switch happened)
-    if (pkg === _lastPackage) {
-      // Still update timestamp
-      _activeApp.timestamp = new Date().toISOString();
-      return;
-    }
-
-    _lastPackage = pkg;
+    if (!pkg) return;
 
     const name     = resolveName(pkg);
     const category = classifyApp(name);
-    const loop     = updateLoop(name, category);
+
+    // ── Accumulate live session time (+2s per poll) ──
+    // Skip neutral apps like Launcher, Settings from accumulation
+    if (category !== 'neutral') {
+      liveSessionStats[name] = (liveSessionStats[name] || 0) + 2;
+    }
+
+    // Only update loop detection on app switch
+    let loop = { loopDetected: _activeApp.loopDetected, loopSequence: _activeApp.loopSequence, loopScore: _activeApp.loopScore };
+    if (pkg !== _lastPackage) {
+      loop = updateLoop(name, category);
+      _lastPackage = pkg;
+
+      // Console log on switch
+      const color = category === 'distraction' ? '\x1b[31m' : category === 'productive' ? '\x1b[32m' : '\x1b[33m';
+      console.log(`${color}[ADB] ${name}\x1b[0m (${pkg}) [live: ${liveSessionStats[name] || 0}s]${loop.loopDetected ? ' ⚠ LOOP' : ''}`);
+    }
 
     _activeApp = {
       package:       pkg,
@@ -242,16 +355,38 @@ function pollADB() {
       loopScore:     loop.loopScore,
       adbConnected:  true,
     };
-
-    // Console log for debugging during hackathon demo
-    const color = category === 'distraction' ? '\x1b[31m' : category === 'productive' ? '\x1b[32m' : '\x1b[33m';
-    console.log(`${color}[ADB] ${name}\x1b[0m (${pkg})${loop.loopDetected ? ' ⚠ LOOP DETECTED' : ''}`);
   });
 }
 
-// ── API: Get active app state ──
+/* ─────────────────────────────────────────────
+   API: Active App — The main endpoint
+   Returns everything: current app, hybrid stats,
+   cognitive score, focus time, nudge flags
+───────────────────────────────────────────── */
+
 app.get('/api/active-app', (_req, res) => {
-  res.json(_activeApp);
+  const focusTimeSec      = calcFocusTime();
+  const distractionTimeSec = calcDistractionTime();
+  const cognitiveScore    = calcCognitiveScore();
+  const nudge             = checkNudgeTrigger();
+
+  res.json({
+    // Current app state
+    ..._activeApp,
+    ghostMode: _ghostMode,
+
+    // Hybrid usage stats
+    appStats:         getAllAppStats(),
+    liveSessionStats: { ...liveSessionStats },
+
+    // Computed metrics
+    focusTimeSec,
+    distractionTimeSec,
+    cognitiveScore,
+
+    // Nudge
+    ...nudge,
+  });
 });
 
 // ── API: Reset distraction loop manually ──
@@ -266,7 +401,7 @@ app.post('/api/active-app/reset-loop', (_req, res) => {
 
 // ── Start ADB polling ──
 _adbPollTimer = setInterval(pollADB, 2000);
-pollADB(); // Immediate first poll
+pollADB();
 
 
 /* ═══════════════════════════════════════════════
@@ -274,17 +409,17 @@ pollADB(); // Immediate first poll
    (Health, Auth, Devices, Tasks)
 ═══════════════════════════════════════════════ */
 
-// ── API: Health check ──
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     system: 'MERIDIAN',
     time:   new Date().toISOString(),
     adb:    _activeApp.adbConnected,
+    ghost:  _ghostMode,
+    cognitiveScore: calcCognitiveScore(),
   });
 });
 
-// ── API: Mock session validate (credentials from .env) ──
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
   const validUser = process.env.AUTH_USERNAME || 'admin';
@@ -300,7 +435,6 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
-// ── API: Mock device states ──
 app.get('/api/devices', (_req, res) => {
   res.json([
     { id: 'tv',     name: 'Samsung QLED TV',   state: true,  room: 'living'  },
@@ -312,7 +446,6 @@ app.get('/api/devices', (_req, res) => {
   ]);
 });
 
-// ── API: Mock tasks ──
 app.get('/api/tasks', (_req, res) => {
   res.json([
     { id:1, text:'Fix JWT token validation edge case',    done:true,  priority:'HIGH',   source:'VS Code'  },
@@ -330,17 +463,15 @@ app.get('/api/tasks', (_req, res) => {
    SECTION 3: GITHUB PULSE — Live Repo Heartbeat
 ═══════════════════════════════════════════════ */
 
-const GITHUB_REPO  = process.env.GITHUB_REPO || 'ridhi1903/meridian-heartbeat';
+const GITHUB_REPO     = process.env.GITHUB_REPO || 'ridhi1903/meridian-heartbeat';
 const GITHUB_REPO_API = `https://api.github.com/repos/${GITHUB_REPO}/commits`;
 
-// In-memory cache
 let _ghCache = { data: null, fetchedAt: 0 };
-const CACHE_TTL_MS = 60_000; // 60 seconds
+const CACHE_TTL_MS = 60_000;
 
 function calcVelocityScore(lastCommitDate) {
   const elapsedMs = Date.now() - new Date(lastCommitDate).getTime();
   const elapsedH  = elapsedMs / (1000 * 60 * 60);
-
   if (elapsedH <= 1)  return Math.round(100 - elapsedH * 10);
   if (elapsedH <= 24) return Math.round(90 - ((elapsedH - 1) / 23) * 70);
   return 20;
@@ -349,21 +480,17 @@ function calcVelocityScore(lastCommitDate) {
 function analyseTargets(commits) {
   const DAILY_TARGET = 3;
   const todayStr = new Date().toISOString().slice(0, 10);
-
   const todayCommits = commits.filter(c => {
     const d = (c.commit?.author?.date || '').slice(0, 10);
     return d === todayStr;
   });
-
   const actual = todayCommits.length;
   const pct    = Math.min(100, Math.round((actual / DAILY_TARGET) * 100));
   const met    = actual >= DAILY_TARGET;
-
   let message;
   if (met)             message = `Target met! ${actual}/${DAILY_TARGET} commits today. Great momentum.`;
   else if (actual > 0) message = `${actual}/${DAILY_TARGET} commits today — ${DAILY_TARGET - actual} more to hit your target.`;
   else                 message = `No commits today yet — your target is ${DAILY_TARGET}. Start pushing!`;
-
   return { target: DAILY_TARGET, actual, met, pct, message };
 }
 
@@ -395,7 +522,6 @@ app.get('/api/github-pulse', async (_req, res) => {
     }
 
     const commits = await ghRes.json();
-
     if (!Array.isArray(commits) || commits.length === 0) {
       return res.json({
         lastCommitMessage: 'No commits found',
@@ -426,8 +552,8 @@ app.get('/api/github-pulse', async (_req, res) => {
   } catch (err) {
     console.error('[github-pulse] Fetch failed:', err.message);
     return res.status(500).json({
-      error:    'Internal server error',
-      message:  err.message,
+      error: 'Internal server error',
+      message: err.message,
       fallback: true,
     });
   }
@@ -438,23 +564,21 @@ app.get('/api/github-pulse', async (_req, res) => {
    SECTION 4: FALLBACK + STARTUP + CLEANUP
 ═══════════════════════════════════════════════ */
 
-// ── Fallback: serve index.html for all other routes ──
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// ── Start server ──
 app.listen(PORT, () => {
   console.log(`\n  ╔══════════════════════════════════════════════╗`);
   console.log(`  ║   MERIDIAN COGNITIVE OS — ONLINE             ║`);
   console.log(`  ╠══════════════════════════════════════════════╣`);
   console.log(`  ║  http://localhost:${PORT}                        ║`);
   console.log(`  ║  Login: see backend/.env                      ║`);
-  console.log(`  ║  ADB:   polling every 2s                     ║`);
-  console.log(`  ╚══════════════════════════════════════════════╝\n`);
+  console.log(`  ║  ADB:   hybrid model — baseline + live       ║`);
+  console.log(`  ╚══════════════════════════════════════════════╝`);
+  console.log(`  Baseline: ${Object.entries(dailyBaseline).map(([k,v]) => `${k}: ${Math.round(v/60)}m`).join(', ')}\n`);
 });
 
-// ── Graceful cleanup — stop ADB polling on exit ──
 function cleanup() {
   console.log('\n[MERIDIAN] Shutting down — clearing ADB poll timer…');
   if (_adbPollTimer) {
@@ -466,6 +590,4 @@ function cleanup() {
 
 process.on('SIGINT',  cleanup);
 process.on('SIGTERM', cleanup);
-process.on('exit',    () => {
-  if (_adbPollTimer) clearInterval(_adbPollTimer);
-});
+process.on('exit',    () => { if (_adbPollTimer) clearInterval(_adbPollTimer); });
